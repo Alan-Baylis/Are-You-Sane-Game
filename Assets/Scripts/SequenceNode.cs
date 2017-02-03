@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 
 
-public class SequenceNode : IParentBehaviourTreeNode
+public class SequenceNode : ParentBehaviourNode<IBehaviourTreeNode>
 {
     /// <summary>
     /// Name of the node.
@@ -18,7 +18,7 @@ public class SequenceNode : IParentBehaviourTreeNode
         this.name = name;
     }
 
-    public virtual BehaviourTreeStatus Tick(TimeData time)
+    public override BehaviourTreeStatus Tick(TimeData time)
     {
         foreach (var child in children)
         {
@@ -35,7 +35,7 @@ public class SequenceNode : IParentBehaviourTreeNode
     /// <summary>
     /// Add a child to the sequence.
     /// </summary>
-    public void AddChild(IBehaviourTreeNode child)
+    public override void AddChild<T>(T child)
     {
         children.Add(child);
     }

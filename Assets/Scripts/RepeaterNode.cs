@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-public class RepeaterNode : IParentBehaviourTreeNode
+public class RepeaterNode : ParentBehaviourNode<IBehaviourTreeNode>
 {
     /// <summary>
     /// The name of the node.
@@ -25,9 +25,9 @@ public class RepeaterNode : IParentBehaviourTreeNode
         this.repeater = repeater;
     }
 
-    public virtual BehaviourTreeStatus Tick(TimeData time)
+    public override BehaviourTreeStatus Tick(TimeData time)
     {
-        while(repeater.Invoke(repeatCount))
+        if(repeater.Invoke(repeatCount))
         {
             var childStatus = child.Tick(time);
             if (childStatus != BehaviourTreeStatus.Success && childStatus != BehaviourTreeStatus.Failure)
@@ -45,7 +45,7 @@ public class RepeaterNode : IParentBehaviourTreeNode
     /// <summary>
     /// Add a child node to the selector.
     /// </summary>
-    public void AddChild(IBehaviourTreeNode child)
+    public override void AddChild<T>(T child)
     {
         this.child = child;
     }

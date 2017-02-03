@@ -3,7 +3,7 @@
 /// <summary>
 /// Selects the first node that succeeds. Tries successive nodes until it finds one that doesn't fail.
 /// </summary>
-public class SelectorNode : IParentBehaviourTreeNode
+public class SelectorNode : ParentBehaviourNode<IBehaviourTreeNode>
 {
 
     /// <summary>
@@ -21,7 +21,7 @@ public class SelectorNode : IParentBehaviourTreeNode
         this.name = name;
     }
 
-    public virtual BehaviourTreeStatus Tick(TimeData time)
+    public override BehaviourTreeStatus Tick(TimeData time)
     {
         foreach (var child in children)
         {
@@ -38,7 +38,7 @@ public class SelectorNode : IParentBehaviourTreeNode
     /// <summary>
     /// Add a child node to the selector.
     /// </summary>
-    public void AddChild(IBehaviourTreeNode child)
+    public override void AddChild<T>(T child)
     {
         children.Add(child);
     }

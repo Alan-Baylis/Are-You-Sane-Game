@@ -4,7 +4,7 @@
 /// <summary>
 /// Decorator node that inverts the success/failure of its child.
 /// </summary>
-public class InverterNode : IParentBehaviourTreeNode
+public class InverterNode : ParentBehaviourNode<IBehaviourTreeNode>
 {
 
     /// <summary>
@@ -22,7 +22,7 @@ public class InverterNode : IParentBehaviourTreeNode
         this.name = name;
     }
 
-    public BehaviourTreeStatus Tick(TimeData time)
+    public override BehaviourTreeStatus Tick(TimeData time)
     {
         if (childNode == null)
         {
@@ -47,7 +47,7 @@ public class InverterNode : IParentBehaviourTreeNode
     /// <summary>
     /// Add a child to the parent node.
     /// </summary>
-    public void AddChild(IBehaviourTreeNode child)
+    public override void AddChild<T>(T child)
     {
         if (this.childNode != null)
         {

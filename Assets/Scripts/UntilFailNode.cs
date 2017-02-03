@@ -14,7 +14,7 @@ public class UntilFailNode : RepeaterNode
 
     public override BehaviourTreeStatus Tick(TimeData time)
     {
-        while (repeater.Invoke(repeatCount))
+        if (repeater.Invoke(repeatCount))
         {
             var childStatus = child.Tick(time);
             if (childStatus != BehaviourTreeStatus.Success && childStatus != BehaviourTreeStatus.Failure)
@@ -23,7 +23,7 @@ public class UntilFailNode : RepeaterNode
             }
 
             if (childStatus == BehaviourTreeStatus.Failure)
-                break;
+                return BehaviourTreeStatus.Success;
 
             repeatCount++;
         }

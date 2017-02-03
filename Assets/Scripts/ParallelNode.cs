@@ -3,7 +3,7 @@
 /// <summary>
 /// Runs childs nodes in parallel.
 /// </summary>
-public class ParallelNode : IParentBehaviourTreeNode
+public class ParallelNode : ParentBehaviourNode<IBehaviourTreeNode>
 {
     /// <summary>
     /// Name of the node.
@@ -32,7 +32,7 @@ public class ParallelNode : IParentBehaviourTreeNode
         this.numRequiredToSucceed = numRequiredToSucceed;
     }
 
-    public BehaviourTreeStatus Tick(TimeData time)
+    public override BehaviourTreeStatus Tick(TimeData time)
     {
         var numChildrenSuceeded = 0;
         var numChildrenFailed = 0;
@@ -60,7 +60,7 @@ public class ParallelNode : IParentBehaviourTreeNode
         return BehaviourTreeStatus.Running;
     }
 
-    public void AddChild(IBehaviourTreeNode child)
+    public override void AddChild<T>(T child)
     {
         children.Add(child);
     }

@@ -1,20 +1,21 @@
 ﻿
-
-
+/// <summary>
+/// Interface for All behaviour tree nodes.
+/// </summary>
 public interface IBehaviourTreeNode
 {
+    /// <summary>
+    /// Tick through this node on the tree.
+    /// </summary>
+    /// <param name="time"></param>
+    /// <returns>Returns the status used to traverse the tree</returns>
     BehaviourTreeStatus Tick(TimeData time);
-}
-
-public interface IbehaviourWeightNode : IBehaviourTreeNode
-{
-    float GetWeight();
 }
 
 /// <summary>
 /// Interface for behaviour tree nodes WITH weights.
 /// </summary>
-public interface INodeWeight
+public interface IbehaviourWeightNode : IBehaviourTreeNode
 {
     /// <summary>
     /// Get the weight of this node
