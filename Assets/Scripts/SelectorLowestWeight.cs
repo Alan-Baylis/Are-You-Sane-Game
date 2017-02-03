@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SelectorLowestWeight : IParentBehaviourNodeToWeight
+public class SelectorLowestWeight : ParentBehaviourNode<IbehaviourWeightNode>
 {
     private string name;
     private int childIndex;
@@ -10,14 +10,14 @@ public class SelectorLowestWeight : IParentBehaviourNodeToWeight
     private float childWeight;
     private float lowestWeight;
 
-    private List<IBehaviourWeightNode> children = new List<IBehaviourWeightNode>();
+    private List<IbehaviourWeightNode> children = new List<IbehaviourWeightNode>();
 
     public SelectorLowestWeight(string name)
     {
         this.name = name;
     }
 
-    public BehaviourTreeStatus Tick(TimeData time)
+    public override BehaviourTreeStatus Tick(TimeData time)
     {
         lowestIndex = 0;
         lowestWeight = children[lowestIndex].GetWeight();
@@ -34,7 +34,7 @@ public class SelectorLowestWeight : IParentBehaviourNodeToWeight
         return children[lowestIndex].Tick(time);
     }
 
-    public void AddChild<U>(U child) where U : IBehaviourWeightNode
+    public override void AddChild<U>(U child)
     {
         children.Add(child);
     }

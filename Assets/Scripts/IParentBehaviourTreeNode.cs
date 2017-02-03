@@ -1,63 +1,36 @@
 ﻿
 
+using System;
 using System.Collections.Generic; // For IDictionary
 
-/// <summary>
-/// Interface for behaviour tree nodes with no weights OR children weights.
-/// </summary>
-public interface IParentBehaviourTreeNode : IBehaviourTreeNode
+
+interface IParentBehaviour
 {
-    /// <summary>
-    /// Add a child to the parent node. Make sure the child is the correct type for its Parent.
-    /// </summary>
     void AddChild<T>(T child) where T : IBehaviourTreeNode;
 }
 
 
-public interface IParentBehaviourNodeToWeight : IParentBehaviourTreeNode
+//where NodeType : IBehaviourTreeNode
+public abstract class ParentBehaviourNode<ChildType> : IParentBehaviour, IBehaviourTreeNode where ChildType : IBehaviourTreeNode 
 {
-    new void AddChild<U>(U child) where U : IBehaviourWeightNode;
-}
-
-/// <summary>
-/// Interface for behaviour tree nodes WITH weight AND children weights.
-/// </summary>
-public interface IParentBehaviourWeightToWeight : IParentBehaviourNodeToWeight
-{
-    float GetWeight();
-}
-
-
-
-public abstract class ParentBehaviour
-{
-    public abstract void AddChild<T>(T child);
-}
-
-interface IParentChild
-{
-    void AddChild<T>(T child);
-}
-
-interface IParentChildWeight<S> : IParentChild where S : ParentBehaviour
-{
-    new void AddChild<R>(R child) where R : ParentBehaviour;
-}
-
-public class ParentWeight : ParentBehaviour, IParentChild
-{
-    public override void AddChild<T>(T child)
+    private ChildType ChildrenType { get; set; }
+    public abstract BehaviourTreeStatus Tick(TimeData time);
+    public abstract void AddChild<U>(U child) where U : ChildType;
+    void IParentBehaviour.AddChild<T>(T child)
     {
-
+        AddChild((ChildType)(IBehaviourTreeNode)child);
     }
 }
 
+public abstract class ParentBehaviourWeighted : ParentBehaviourNode<IbehaviourWeightNode>
+{
+    public abstract float GetWeight();
+}
 
 
+//// For marker interfaces
+//interface MyInterface<T> { }
 
-// For marker interfaces
-interface MyInterface<T> { }
+//class MyClass<T, U> : MyInterface<U> { }
 
-class MyClass<T, U> : MyInterface<U> { }
-
-class OtherClass<T, U> : MyInterface<IDictionary<U, T>> { }
+//class OtherClass<T, U> : MyInterface<IDictionary<U, T>> { }

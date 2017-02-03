@@ -17,7 +17,7 @@ public class BehaviourTreeBuilder
     /// <summary>
     /// Stack node nodes that we are build via the fluent API.
     /// </summary>
-    private Stack<IParentBehaviourTreeNode> parentNodeStack = new Stack<IParentBehaviourTreeNode>();
+    private Stack<IParentBehaviour> parentNodeStack = new Stack<IParentBehaviour>();
 
     /// <summary>
     /// Create an action node.
@@ -51,7 +51,7 @@ public class BehaviourTreeBuilder
 
         if (parentNodeStack.Count > 0)
         {
-            parentNodeStack.Peek().AddChild(inverterNode);
+            parentNodeStack.Peek().AddChild((IBehaviourTreeNode)inverterNode);
         }
 
         parentNodeStack.Push(inverterNode);
