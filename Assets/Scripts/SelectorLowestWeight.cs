@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SelectorLowestWeight
+public class SelectorLowestWeight : IParentBehaviourNodeToWeight
 {
-    // : IParentBehaviourNodeToWeight
     private string name;
     private int childIndex;
     private int lowestIndex;
@@ -35,8 +34,9 @@ public class SelectorLowestWeight
         return children[lowestIndex].Tick(time);
     }
 
-    public void AddChild(IBehaviourWeightNode child)
+    public void AddChild<U>(U child) where U : IBehaviourWeightNode
     {
         children.Add(child);
     }
+
 }

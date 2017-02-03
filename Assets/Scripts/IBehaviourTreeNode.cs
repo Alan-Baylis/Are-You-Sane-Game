@@ -1,6 +1,6 @@
 ﻿
 /// <summary>
-/// Interface for behaviour tree nodes.
+/// Interface for behaviour tree nodes with NO weights.
 /// </summary>
 public interface IBehaviourTreeNode
 {
@@ -10,9 +10,18 @@ public interface IBehaviourTreeNode
     BehaviourTreeStatus Tick(TimeData time);
 }
 
-public interface IWeight
+/// <summary>
+/// Interface for behaviour tree nodes WITH weights.
+/// </summary>
+public interface IBehaviourWeightNode : IBehaviourTreeNode
 {
+    /// <summary>
+    /// Get the weight of this node
+    /// </summary>
+    /// <returns>returns weight from scale 0 - 1f</returns>
     float GetWeight();
 }
 
-public interface IBehaviourWeightNode : IBehaviourTreeNode, IWeight { }
+
+
+

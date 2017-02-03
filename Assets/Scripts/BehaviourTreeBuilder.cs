@@ -64,10 +64,11 @@ public class BehaviourTreeBuilder
 
         if (parentNodeStack.Count > 0)
         {
-            //parentNodeStack.Peek().AddChild(selector);
+            parentNodeStack.Peek().AddChild(selector);
         }
 
-        //parentNodeStack.Push(selector);// This is the problem!!
+        
+        parentNodeStack.Push(selector);// This is the problem!!
         return this;
     }
 

@@ -1,26 +1,63 @@
 ﻿
+
+using System.Collections.Generic; // For IDictionary
+
 /// <summary>
-/// Interface for behaviour tree nodes.
+/// Interface for behaviour tree nodes with no weights OR children weights.
 /// </summary>
 public interface IParentBehaviourTreeNode : IBehaviourTreeNode
 {
     /// <summary>
-    /// Add a child to the parent node.
+    /// Add a child to the parent node. Make sure the child is the correct type for its Parent.
     /// </summary>
-    void AddChild(IBehaviourTreeNode child);    
+    void AddChild<T>(T child) where T : IBehaviourTreeNode;
 }
 
-public interface IParentBehaviourNodeToWeight : IParentBehaviourTreeNode // No weight
+
+public interface IParentBehaviourNodeToWeight : IParentBehaviourTreeNode
 {
-    void AddChild(IBehaviourWeightNode weightedChild); // Weighted
+    new void AddChild<U>(U child) where U : IBehaviourWeightNode;
 }
 
-public interface IParentBehaviourWeightToNode : IParentBehaviourTreeNode, IWeight// Weighted
+/// <summary>
+/// Interface for behaviour tree nodes WITH weight AND children weights.
+/// </summary>
+public interface IParentBehaviourWeightToWeight : IParentBehaviourNodeToWeight
 {
-    //void AddChild(IBehaviourTreeNode child); // No weight
+    float GetWeight();
 }
 
-public interface IParentBehaviourWeightToWeight : IParentBehaviourTreeNode, IWeight // Weighted
+
+
+public abstract class ParentBehaviour
 {
-    void AddChild(IBehaviourWeightNode child); // Weighted
+    public abstract void AddChild<T>(T child);
 }
+
+interface IParentChild
+{
+    void AddChild<T>(T child);
+}
+
+interface IParentChildWeight<S> : IParentChild where S : ParentBehaviour
+{
+    new void AddChild<R>(R child) where R : ParentBehaviour;
+}
+
+public class ParentWeight : ParentBehaviour, IParentChild
+{
+    public override void AddChild<T>(T child)
+    {
+
+    }
+}
+
+
+
+
+// For marker interfaces
+interface MyInterface<T> { }
+
+class MyClass<T, U> : MyInterface<U> { }
+
+class OtherClass<T, U> : MyInterface<IDictionary<U, T>> { }
