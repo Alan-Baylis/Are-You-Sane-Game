@@ -146,6 +146,13 @@ public class BehaviourTreeBuilder
         return this;
     }
 
+    public BehaviourTreeBuilder SelectorHighestWeight(string name)
+    {
+        var selector = new SelectorHighestWeight(name);
+        AddParentToTop(selector);
+        return this;
+    }
+
 
 
 

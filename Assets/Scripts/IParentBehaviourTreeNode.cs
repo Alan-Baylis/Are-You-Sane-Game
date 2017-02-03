@@ -21,6 +21,8 @@ public abstract class ParentBehaviourNode<ChildType> : IParentBehaviour where Ch
     }
 }
 
+
+
 public abstract class ParentBehaviourWeighted : ParentBehaviourNode<IbehaviourWeightNode>
 {
     public abstract float GetWeight();
