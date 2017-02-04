@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-public class RepeaterNode : ParentBehaviourNode<IBehaviourTreeNode>
+public class RepeaterNode : ParentBehaviour<IBehaviourTreeNode>
 {
     /// <summary>
     /// The name of the node.

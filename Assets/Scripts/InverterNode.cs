@@ -4,7 +4,7 @@
 /// <summary>
 /// Decorator node that inverts the success/failure of its child.
 /// </summary>
-public class InverterNode : ParentBehaviourNode<IBehaviourTreeNode>
+public class InverterNode : ParentBehaviour<IBehaviourTreeNode>
 {
 
     /// <summary>

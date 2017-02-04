@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SelectorLowestWeight : ParentBehaviourNode<IbehaviourWeightNode>
+public class SelectorLowestWeight : ParentBehaviour<IbehaviourWeightNode>
 {
     private string name;
     private int childIndex;

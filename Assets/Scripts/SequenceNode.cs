@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 
 
-public class SequenceNode : ParentBehaviourNode<IBehaviourTreeNode>
+public class SequenceNode : ParentBehaviour<IBehaviourTreeNode>
 {
     /// <summary>
     /// Name of the node.

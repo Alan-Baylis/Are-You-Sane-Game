@@ -3,7 +3,7 @@
 /// <summary>
 /// Selects the first node that succeeds. Tries successive nodes until it finds one that doesn't fail.
 /// </summary>
-public class SelectorNode : ParentBehaviourNode<IBehaviourTreeNode>
+public class SelectorNode : ParentBehaviour<IBehaviourTreeNode>
 {
 
     /// <summary>

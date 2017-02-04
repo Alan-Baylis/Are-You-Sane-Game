@@ -3,7 +3,7 @@
 /// <summary>
 /// Runs childs nodes in parallel.
 /// </summary>
-public class ParallelNode : ParentBehaviourNode<IBehaviourTreeNode>
+public class ParallelNode : ParentBehaviour<IBehaviourTreeNode>
 {
     /// <summary>
     /// Name of the node.
