@@ -19,9 +19,6 @@ public class BehaviourTreeBuilder
     /// </summary>
     private Stack<IParentBehaviour> parentNodeStack = new Stack<IParentBehaviour>();
 
-
-    //private Stack<IParentBehaviour> parentNodeStack = new Stack<IParentBehaviour>();
-
     /********************************* ACTION NODE ******************************************/
 
     /// <summary>
@@ -55,43 +52,36 @@ public class BehaviourTreeBuilder
     public BehaviourTreeBuilder Splice(IBehaviourTreeNode subTree)
     {
         if (subTree == null)
-        {
             Debug.LogError("Sub-Tree is NULL and cannot combine with the tree");
-        }
-
+        
         if (parentNodeStack.Count <= 0)
-        {
             Debug.LogError("Can't splice an unnested sub-tree, there must be a parent-tree.");
-        }
 
         parentNodeStack.Peek().AddChild(subTree);
         return this;
     }
 
 
-    /********************************* PARENT NODE TYPES ******************************************/
+    /********************************* NON-WEIGHTED PARENT NODE TYPES ******************************************/
 
     /// <summary>
     /// Create an inverter node that inverts the success/failure of its children. Currently this Node is LIMITED to ONE child.
     /// </summary>
     public BehaviourTreeBuilder Inverter(string name)
     {
-        var inverterNode = new InverterNode(name);
-        AddParentToTop(inverterNode);
+        AddParentToTop(new InverterNode(name));
         return this;
     }
 
     public BehaviourTreeBuilder Repeater(string name, Func<int, bool> repeater)
     {
-        var repeaterNode = new RepeaterNode(name, repeater);
-        AddParentToTop(repeaterNode);
+        AddParentToTop(new RepeaterNode(name, repeater));
         return this;
     }
 
     public BehaviourTreeBuilder RepeatUntilFail(string name, Func<int, bool> repeater)
     {
-        var repeatUntilFail = new UntilFailNode(name, repeater);
-        AddParentToTop(repeatUntilFail);
+        AddParentToTop(new UntilFailNode(name, repeater));
         return this;
     }
 
@@ -100,15 +90,13 @@ public class BehaviourTreeBuilder
     /// </summary>
     public BehaviourTreeBuilder Sequence(string name)
     {
-        var sequenceNode = new SequenceNode(name);
-        AddParentToTop(sequenceNode);
+        AddParentToTop(new SequenceNode(name));
         return this;
     }
 
     public BehaviourTreeBuilder RandomSequence(string name)
     {
-        var sequenceNode = new RandomSequenceNode(name);
-        AddParentToTop(sequenceNode);
+        AddParentToTop(new RandomSequenceNode(name));
         return this;
     }
 
@@ -117,8 +105,7 @@ public class BehaviourTreeBuilder
     /// </summary>
     public BehaviourTreeBuilder Parallel(string name, int numRequiredToFail, int numRequiredToSucceed) // This applies depth search
     {
-        var parallelNode = new ParallelNode(name, numRequiredToFail, numRequiredToSucceed);
-        AddParentToTop(parallelNode);
+        AddParentToTop(new ParallelNode(name, numRequiredToFail, numRequiredToSucceed));
         return this;
     }
 
@@ -127,37 +114,30 @@ public class BehaviourTreeBuilder
     /// </summary>
     public BehaviourTreeBuilder Selector(string name)
     {
-        var selectorNode = new SelectorNode(name);
-        AddParentToTop(selectorNode);
+        AddParentToTop(new SelectorNode(name));
         return this;
     }
 
     public BehaviourTreeBuilder RandomSelector(string name)
     {
-        var selectorNode = new RandomSelectorNode(name);
-        AddParentToTop(selectorNode);
+        AddParentToTop(new RandomSelectorNode(name));
         return this;
     }
 
-    /******************************** WEIGHTED NODE INVOLVED ****************************************/
+    /******************************** WEIGHTED CHILDREN INVOLVED ****************************************/
 
 
     public BehaviourTreeBuilder SelectorLowestWeight(string name)
     {
-        var selector = new SelectorLowestWeight(name);
-        AddParentToTop(selector);
+        AddParentToTop(new SelectorLowestWeight(name));
         return this;
     }
 
     public BehaviourTreeBuilder SelectorHighestWeight(string name)
     {
-        var selector = new SelectorHighestWeight(name);
-        AddParentToTop(selector);
+        AddParentToTop(new SelectorHighestWeight(name));
         return this;
     }
-
-
-
 
     /********************************* TREE FUNCTIONALITY ******************************************/
 
@@ -167,10 +147,8 @@ public class BehaviourTreeBuilder
     public IBehaviourTreeNode Build()
     {
         if (curNode == null)
-        {
             Debug.LogError("Can't create a behaviour tree with zero nodes");
-        }
-
+        
         return curNode;
     }
 
@@ -190,9 +168,7 @@ public class BehaviourTreeBuilder
     private void AddParentToTop(IParentBehaviour node)
     {
         if (parentNodeStack.Count > 0)
-        {
             parentNodeStack.Peek().AddChild(node);
-        }
 
         parentNodeStack.Push(node);
     }

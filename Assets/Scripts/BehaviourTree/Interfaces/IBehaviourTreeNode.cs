@@ -1,4 +1,5 @@
-﻿
+﻿using System;
+
 /// <summary>
 /// Interface for All behaviour tree nodes.
 /// </summary>
