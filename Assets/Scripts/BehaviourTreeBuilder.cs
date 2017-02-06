@@ -19,6 +19,9 @@ public class BehaviourTreeBuilder
     /// </summary>
     private Stack<IParentBehaviour> parentNodeStack = new Stack<IParentBehaviour>();
 
+
+    //private Stack<IParentBehaviour> parentNodeStack = new Stack<IParentBehaviour>();
+
     /********************************* ACTION NODE ******************************************/
 
     /// <summary>

@@ -15,7 +15,7 @@ public interface IBehaviourTreeNode
 /// <summary>
 /// Interface for behaviour tree nodes WITH weights.
 /// </summary>
-public interface IbehaviourWeightNode : IBehaviourTreeNode
+public interface IBehaviourWeightNode : IBehaviourTreeNode
 {
     /// <summary>
     /// Get the weight of this node

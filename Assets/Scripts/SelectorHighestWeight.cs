@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SelectorHighestWeight : ParentBehaviour<IbehaviourWeightNode>
+public class SelectorHighestWeight : ParentBehaviour<IBehaviourWeightNode>
 {
     private string name;
     private int childIndex;
@@ -10,7 +10,7 @@ public class SelectorHighestWeight : ParentBehaviour<IbehaviourWeightNode>
     private float childWeight;
     private float highestWeight;
 
-    private List<IbehaviourWeightNode> children = new List<IbehaviourWeightNode>();
+    private List<IBehaviourWeightNode> children = new List<IBehaviourWeightNode>();
 
     public SelectorHighestWeight(string name)
     {
