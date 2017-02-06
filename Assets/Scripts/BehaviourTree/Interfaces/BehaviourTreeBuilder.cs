@@ -112,7 +112,7 @@ public class BehaviourTreeBuilder
         return this;
     }
 
-    public BehaviourTreeBuilder RandomSelector(string name)
+    public BehaviourTreeBuilder SelectorRandom(string name)
     {
         AddParentToTop(new RandomSelectorNode(name));
         return this;
@@ -130,6 +130,12 @@ public class BehaviourTreeBuilder
     public BehaviourTreeBuilder SelectorHighestWeight(string name)
     {
         AddParentToTop(new SelectorHighestWeight(name));
+        return this;
+    }
+
+    public BehaviourTreeBuilder SelectorConditionNode(string name, Func<float, bool> fn)
+    {
+        AddParentToTop(new SelectorConditionNode(name, fn));
         return this;
     }
 
