@@ -11,11 +11,11 @@ public class LABehaviour : MonoBehaviour
         BehaviourTreeBuilder builder = new BehaviourTreeBuilder();
         this.m_tree = builder
             .Sequence("my-sequence")
-            .Do("action1", t =>
+            .DoAction("action1", t =>
             {
                 return BehaviourTreeStatus.Success;
             })
-            .Do("action2", t =>
+            .DoAction("action2", t =>
             {
                 return BehaviourTreeStatus.Success;
             })

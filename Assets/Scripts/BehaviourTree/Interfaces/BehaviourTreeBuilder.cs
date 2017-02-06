@@ -24,15 +24,21 @@ public class BehaviourTreeBuilder
     /// <summary>
     /// Create an action node.
     /// </summary>
-    public BehaviourTreeBuilder Do(string name, Func<TimeData, BehaviourTreeStatus> fn)
+    public BehaviourTreeBuilder DoAction(string name, Func<TimeData, BehaviourTreeStatus> fn)
     {
         if (parentNodeStack.Count <= 0)
-        {
             Debug.LogError("Can't create an unnested ActionNode, it must be a leaf node.");
-        }
+        
+        parentNodeStack.Peek().AddChild(new ActionNode(name, fn));
+        return this;
+    }
 
-        var actionNode = new ActionNode(name, fn);
-        parentNodeStack.Peek().AddChild(actionNode);
+    public BehaviourTreeBuilder DoActionWeighted(string name, Func<TimeData, BehaviourTreeStatus> fn, Func<float> weight)
+    {
+        if (parentNodeStack.Count <= 0)
+            Debug.LogError("Can't create an unnested ActionNode, it must be a leaf node.");
+
+        parentNodeStack.Peek().AddChild(new ActionNodeWeighted(name, fn, weight));
         return this;
     }
 
@@ -43,7 +49,7 @@ public class BehaviourTreeBuilder
     /// </summary>
     public BehaviourTreeBuilder Condition(string name, Func<TimeData, bool> fn)
     {
-        return Do(name, t => fn(t) ? BehaviourTreeStatus.Success : BehaviourTreeStatus.Failure);
+        return DoAction(name, t => fn(t) ? BehaviourTreeStatus.Success : BehaviourTreeStatus.Failure);
     }
 
     /// <summary>
@@ -70,18 +76,6 @@ public class BehaviourTreeBuilder
     public BehaviourTreeBuilder Inverter(string name)
     {
         AddParentToTop(new InverterNode(name));
-        return this;
-    }
-
-    public BehaviourTreeBuilder Repeater(string name, Func<int, bool> repeater)
-    {
-        AddParentToTop(new RepeaterNode(name, repeater));
-        return this;
-    }
-
-    public BehaviourTreeBuilder RepeatUntilFail(string name, Func<int, bool> repeater)
-    {
-        AddParentToTop(new UntilFailNode(name, repeater));
         return this;
     }
 

@@ -118,7 +118,7 @@ public class LAObject : MonoBehaviour // This Class has to be responsible for ma
                     #region STARTLED
 
                         .Condition("Startled?", t => m_sense.Startled)
-                        .Do("Turn To Startle", t =>
+                        .DoAction("Turn To Startle", t =>
                         {
                             return m_movement.TurnToFacePlayer();
                         })
@@ -140,7 +140,7 @@ public class LAObject : MonoBehaviour // This Class has to be responsible for ma
                         .Condition("Have we been to the Last seen Node?", t => !m_sense.LastSightInvestigated)
 
                          // Only continue if we have NOT investigated the last seen
-                        .Do("Move to Last Seen", t =>
+                        .DoAction("Move to Last Seen", t =>
                         {
                             // This will changed the last sight investigation if we have reached proximity
                             return m_movement.MoveToLastSeen();
@@ -155,7 +155,7 @@ public class LAObject : MonoBehaviour // This Class has to be responsible for ma
 
                     // Move
                     .Condition("Select New Waypoint", t => m_movement.SelectNewPatrolPosition()) // If we cannot select a new way point then continue
-                    .Do("Move to Waypoint", t =>
+                    .DoAction("Move to Waypoint", t =>
                     {
                         return m_movement.MoveToDestination();
                     })
@@ -188,7 +188,7 @@ public class LAObject : MonoBehaviour // This Class has to be responsible for ma
                 #region ATTACK
 
                     .Condition("In Range to Attack?", t => m_movement.InPlayerAttackRange())
-                    .Do("Attack Slap Player", t =>
+                    .DoAction("Attack Slap Player", t =>
                     {
                         return m_attacks.SlapPlayer();
                     })
@@ -196,7 +196,7 @@ public class LAObject : MonoBehaviour // This Class has to be responsible for ma
                 #endregion
                 .End() // End Attack Sequence
 
-                .Do("MoveToPlayer", t =>
+                .DoAction("MoveToPlayer", t =>
                 {
                     return m_movement.MoveToPlayer();
                 })
