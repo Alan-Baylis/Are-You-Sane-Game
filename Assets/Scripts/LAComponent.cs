@@ -23,4 +23,6 @@ public abstract class LAComponent : MonoBehaviour, LAConfig
 
     // Update is called once per frame
     public virtual void Update () { }
+
+    public virtual void FixedUpdate() { }
 }

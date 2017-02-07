@@ -28,21 +28,40 @@ public class LAMovement : LAComponent
     private bool m_climbingStairs = false;
 
 
+
+    private bool m_PreviouslyGrounded;
+    private bool m_IsGrounded;
+    private Vector3 m_GroundContactNormal;
+    private bool m_Jumping;
+    private CapsuleCollider m_Capsule;
+    public AdvancedSettings advancedSettings = new AdvancedSettings();
+
     private List<GameObject> m_currentMovementBlocks = new List<GameObject>();
 
     private BlockPiece m_targetTempNode;
     private bool m_stairClimbing = false;
 
+    LAMove m_moveState = LAMove.Idle;
+
     /// <summary>
     /// This is a literal game getter and will only return the actual value of where annie is rather than one which might possibly be set - good for editing
     /// </summary>
     public int currentFloor { get { return m_currentNodePosition.GetY(); } }
-    LAMove m_moveState = LAMove.Idle;
 
     public Pathfinder pathfinder { get { return m_pathFinder; } }
 
     public BlockPiece currentNodePosition { get { return m_currentNodePosition; } }
 
+    [System.Serializable]
+    public class AdvancedSettings
+    {
+        public float groundCheckDistance = 0.01f;               // distance for checking if the controller is grounded ( 0.01f seems to work best for this )
+        public float stickToGroundHelperDistance = 0.5f;        // stops the character
+        public float slowDownRate = 20f;                        // rate at which the controller comes to a stop when there is no input
+        public bool airControl;                                 // can the user control the direction that is being moved in the air
+        [Tooltip("set it to 0.1 or more if stuck in wall")]
+        public float shellOffset;                               //reduce the radius by that ratio to avoid getting stuck in wall (a value of 0.1f is nice)
+    }
 
     public void SetNodePosition(BlockPiece node)
     {
@@ -155,7 +174,7 @@ public class LAMovement : LAComponent
     public void SelectMovementPath(BlockPiece destination)
     {
         m_targetTempNode = destination;
-        if (m_pathFinder.GetPathFullTraversal(destination.gameObject, false))
+        if (m_pathFinder.GetPathFullTraversal(destination.gameObject, false)) // At the moment she does not include rooms, but it is programmed ready for room testing, just need to apply the actions of opening doors on pathing
         {
             Annie.Animation.Walk(true);
 
@@ -206,6 +225,7 @@ public class LAMovement : LAComponent
     public override void Start ()
     {
         m_pathFinder = GetComponentInChildren<Pathfinder>();
+        m_Capsule = GetComponent<CapsuleCollider>();
 	}
 
     // Update is called once per frame
@@ -214,7 +234,16 @@ public class LAMovement : LAComponent
 
 	}
 
-    public BehaviourTreeStatus MoveToLastSeen()
+    public override void FixedUpdate()
+    {
+        GroundCheck();
+    }
+
+    /// <summary>
+    /// This is the method used when updateing the movement from the behaviour tree
+    /// </summary>
+    /// <returns></returns>
+    public BehaviourTreeStatus MoveToLastSeen() // We need to carefully combine this method with the fixed update or find a way of tickikng the behaviour tree through fixed update aswell as regualr update
     {
 
         // This is only temporary so we can traverse the building - TODO COMPLETE FIX FOR STAIRS INCLINING AND DECLINING
@@ -307,7 +336,29 @@ public class LAMovement : LAComponent
 
 
 
+    /// sphere cast down just beyond the bottom of the capsule to see if the capsule is colliding round the bottom
+    private void GroundCheck()
+    {
+        m_PreviouslyGrounded = m_IsGrounded;
+        RaycastHit hitInfo;
+        if (Physics.SphereCast(transform.position, m_Capsule.radius * (1.0f - advancedSettings.shellOffset), Vector3.down, out hitInfo,
+                                ((m_Capsule.height / 2f) - m_Capsule.radius) + advancedSettings.groundCheckDistance, ~0, QueryTriggerInteraction.Ignore))
+        {
+            m_IsGrounded = true;
+            m_GroundContactNormal = hitInfo.normal;
+        }
+        else
+        {
+            m_IsGrounded = false;
+            m_GroundContactNormal = Vector3.up;
+        }
 
+        if (!m_PreviouslyGrounded && m_IsGrounded && m_Jumping)
+        {
+            //PlayLandingSound();
+            m_Jumping = false;
+        }
+    }
 
 
 }
