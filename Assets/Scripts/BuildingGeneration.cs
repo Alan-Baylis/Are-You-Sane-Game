@@ -1880,12 +1880,12 @@ public class BuildingGeneration : MonoBehaviour
         DemolishRequest request = DemolishCall(safety.type);
         floorBlocks[safety.floor].ClearNodesOfType(request.types);
 
-        FreeUnvaluedNodes       (safety.floor, request.search);
-        ClearRoomsAndRoutes     (safety.floor, request.search);
-        DemolishCleanUp         (safety);
-        ConfigureFrame          (safety, request.types);
-        ConfigureFloorGrid      (safety.floor);
-        return InitialDemolition(safety.type);
+        FreeUnvaluedNodes(safety.floor, request.search);        // Removes all the unvalued nodes to keep for this regeneration from the lists on this floor
+        ClearRoomsAndRoutes(safety.floor, request.search);      // Clears the rooms and routes on the given floor ready for another regeneration
+        DemolishCleanUp(safety);                                // Clears the respective lists which would contain the null references. This also clears the lists on any corresponding floors above or below.
+        ConfigureFrame(safety, request.types);                  // Set the new floor dimensions as a minimum based on the nodes that have been kept.
+        ConfigureFloorGrid(safety.floor);                       // Recreates a grid to fill out the new floor with empty gameobjects ready for population
+        return InitialDemolition(safety.type);                  // Returns the type conversion so the floor can move to the next phase (population - instantiating models and configuration)
     }
 
     /// <summary>
