@@ -7,12 +7,17 @@ public class GameTimer : MonoBehaviour
     [SerializeField]
     private UIInsanity m_InsanityControl;
 
+    [SerializeField]
+    private bool m_IgnoreTimerTesting = false;
+
+
     private PlayerObject m_player;
     private Text m_textUI;
     private int m_timerInc;
     private float m_timer;
     private float m_gameMinutes;
     private float m_gameHour;
+    private float m_timerMax = 2f;
 
     // Use this for initialization
     void Start ()
@@ -20,6 +25,10 @@ public class GameTimer : MonoBehaviour
         m_player = GameObject.FindGameObjectWithTag(GameTag.Player).GetComponent<PlayerObject>();        
         m_textUI = GetComponent<Text>();
         ResetTimer();
+
+        if (m_IgnoreTimerTesting)
+            m_timerMax = 80000f;
+        
     }
 
     public void ResetTimer()
@@ -36,7 +45,7 @@ public class GameTimer : MonoBehaviour
         if (m_player == null) return;
         if (!m_player.IsActivated) return;
 
-	    if (m_timer < 2f)
+	    if (m_timer < m_timerMax)
         {
             m_timer += Time.deltaTime;
         }
