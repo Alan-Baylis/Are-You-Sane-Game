@@ -6,15 +6,12 @@ using System.Linq;
 
 public static class MyHelper
 {
-    public static T FindComponentInChildWithTag<T>(this GameObject parent, string tag) where T : Component
+    public static T FindComponentInChildrenWithTag<T>(this GameObject parent, string tag) where T : Component
     {
-        Transform p_Transform = parent.transform;
-        foreach (Transform child in p_Transform)
+        Transform child = FindChildWithTag(parent, tag);
+        if (child != null)
         {
-            if (child.tag == tag)
-            {
-                return child.GetComponent<T>();
-            }
+            return child.GetComponent<T>();
         }
 
         Debug.Log("No Child was found in " + parent.name + " with Tag : " + tag);
@@ -46,6 +43,20 @@ public static class MyHelper
     public static bool ContainsAll<T>(this IEnumerable<T> containingList, IEnumerable<T> lookupList)
     {
         return !lookupList.Except(containingList).Any();
+    }
+
+    public static Transform FindChildWithTag(this GameObject parent, string tag)
+    {
+        Transform[] trs = parent.GetComponentsInChildren<Transform>(true);
+        foreach (Transform t in trs)
+        {
+            if (t.tag == tag)
+            {
+                return t;
+            }
+        }
+
+        return null;
     }
 
     public static List<GameObject> FindChildrenWithTag(this GameObject parent, string tag)

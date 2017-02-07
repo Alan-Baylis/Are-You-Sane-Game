@@ -16,7 +16,7 @@ public class LightBehaviour : MonoBehaviour
     {
         m_Light = GetComponent<Light>();
         m_Animation = GetComponent<Animator>();
-        m_Material = MyHelper.FindComponentInChildWithTag<MeshRenderer>(this.gameObject, GameTag.Material).material;
+        m_Material = MyHelper.FindComponentInChildrenWithTag<MeshRenderer>(this.gameObject, GameTag.Material).material;
         m_InitialColor = m_Material.color;
     }
 

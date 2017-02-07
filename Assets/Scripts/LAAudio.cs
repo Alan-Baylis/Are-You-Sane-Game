@@ -21,52 +21,54 @@ public class LAAudio : LAComponent
     [SerializeField]
     private AudioClip[] m_FootstepSounds;    // an array of footstep sounds that will be randomly selected from.
 
-    private AudioSource m_source;
+    private AudioSource m_VoiceSource;
+    private AudioSource m_FeetSource;
     private AudioClip m_currentClip = new AudioClip();
 
     private float m_audioTimer = 0.0f;
     private bool m_playLoopDelay;
     private float m_loopDelay = 0.0f;
 
-    public bool isPlaying { get { return m_source.isPlaying; } }
+    public bool isPlaying { get { return m_VoiceSource.isPlaying; } }
 
 	// Use this for initialization
 	public override void Start ()
     {
-        m_source = GetComponentInChildren<AudioSource>();
-	}
+        m_VoiceSource = MyHelper.FindComponentInChildrenWithTag<AudioSource>(this.gameObject, "AnnieVoice");
+        m_FeetSource = MyHelper.FindComponentInChildrenWithTag<AudioSource>(this.gameObject, "AnnieFeet");
+    }
 
     public void PlayFootStepAudio()
     {
         // pick & play a random footstep sound from the array,
         // excluding sound at index 0
         int n = Random.Range(1, m_FootstepSounds.Length);
-        m_source.volume = 0.5f;
-        m_source.clip = m_FootstepSounds[n];
-        m_source.PlayOneShot(m_source.clip);
+        m_FeetSource.volume = 0.5f;
+        m_FeetSource.clip = m_FootstepSounds[n];
+        m_FeetSource.PlayOneShot(m_FeetSource.clip);
         // move picked sound to index 0 so it's not picked next time
         m_FootstepSounds[n] = m_FootstepSounds[0];
-        m_FootstepSounds[0] = m_source.clip;
+        m_FootstepSounds[0] = m_FeetSource.clip;
     }
 
     private IEnumerator LoopDelay(AudioClip clip, float delay)
     {
-        while (m_source.clip == clip)
+        while (m_VoiceSource.clip == clip)
         {
             yield return new WaitForSeconds(delay);
 
-            if (!m_source.isPlaying)
+            if (!m_VoiceSource.isPlaying)
             {                
-                m_source.PlayOneShot(clip);
+                m_VoiceSource.PlayOneShot(clip);
             }
         }
     }
 
     private void AssignClip(AudioClip clip, bool loop, float delay)
     {
-        if (m_source.clip == null || m_source.clip.name != clip.name)
+        if (m_VoiceSource.clip == null || m_VoiceSource.clip.name != clip.name)
         {
-            m_source.Stop();
+            m_VoiceSource.Stop();
 
             if (loop)
             {
@@ -78,16 +80,16 @@ public class LAAudio : LAComponent
                 }
                 else
                 {
-                    m_source.clip = clip;
-                    m_source.loop = true;
-                    m_source.Play();
+                    m_VoiceSource.clip = clip;
+                    m_VoiceSource.loop = true;
+                    m_VoiceSource.Play();
                 }
             }
             else
             {
                 //m_source.clip = clip;
                 //m_source.Play();
-                m_source.PlayOneShot(clip);
+                m_VoiceSource.PlayOneShot(clip);
             }
         }
         

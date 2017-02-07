@@ -104,11 +104,8 @@ public class LAMovement : LAComponent
 
             if (m_Running)
                 CurrentTargetSpeed *= RunMultiplier;
-            
         }
     }
-
-    
 
     public void SetNodePosition(BlockPiece node)
     {
@@ -222,7 +219,8 @@ public class LAMovement : LAComponent
             // If the first index is closer than zero then we will start pathing from that index instead
             if (m_pathFinder.combinedPathNodes.Count > 1)
             {
-                m_pathingIndex = (Vector3.Distance(m_pathFinder.combinedPathNodes[0].transform.position, transform.position) > Vector3.Distance(m_pathFinder.combinedPathNodes[1].transform.position, transform.position)) ? 1 : 0;
+                m_pathingIndex = (Vector3.Distance(m_pathFinder.combinedPathNodes[0].transform.position, transform.position) >
+                                Vector3.Distance(m_pathFinder.combinedPathNodes[1].transform.position, transform.position)) ? 1 : 0;
             }
             else
             {
