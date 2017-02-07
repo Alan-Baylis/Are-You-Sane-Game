@@ -171,7 +171,7 @@ public class LAObject : MonoBehaviour // This Class has to be responsible for ma
 
         // Possible set up other components variable here
         m_movement.InstantlyMoveToNode(spawnNode);
-        //GetComponent<Rigidbody>().useGravity = true;
+        GetComponent<Rigidbody>().useGravity = true;
         m_audio.Sing(false, 0f);
 
         m_activated = true;

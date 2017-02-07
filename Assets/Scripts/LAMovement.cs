@@ -17,24 +17,35 @@ public class LAMovement : LAComponent
     private static readonly Vector3 offSetY = new Vector3(0f, 1.5f, 0f);        // The Spawn instantiation offset to we spawn above the blockpieces and fall down onto them
     private List<BlockPiece> m_currentPatrolBlocks = new List<BlockPiece>();    // Used for adding the range of corridor blocks on the current floor - potentially swap to the current floor level
     private BlockPiece m_currentNodePosition;                                   // The current Block Piece position of Annie
-    private Vector3 m_prevoiusVectorPosition = new Vector3();                   // Our previous Vector position to catch if we are stuck or other checks
     private Pathfinder m_pathFinder;                                            // Used for our pathfinding - we must remotely set and get the paths & nodes through it
     private int m_pathingIndex = 0;                                             // Index used to count the progress between the block pieces while patrolling
     private bool m_reachedSelectedPath = false;                                 // Bool for stating if we have reached the target destination for pathfinding
     private bool m_chasingLastKnowPosition = false;
     private BlockPiece m_nextTargetNode;
-    private Vector3 m_nextTargetPosition = new Vector3();                       // Used for Storing a position we're about to move to
+
     private float m_speedModifier = 1f;
     private bool m_climbingStairs = false;
 
-
-
+    private float m_StepCycle;
+    private float m_NextStep;
+    private Rigidbody m_Rigidbody;
+    private Vector3 m_MovementVector;
     private bool m_PreviouslyGrounded;
     private bool m_IsGrounded;
     private Vector3 m_GroundContactNormal;
     private bool m_Jumping;
+    private bool m_Jump;
     private CapsuleCollider m_Capsule;
     public AdvancedSettings advancedSettings = new AdvancedSettings();
+    public MovementSettings movementSettings = new MovementSettings();
+
+    [SerializeField][Range(0f, 1f)]
+    private float m_RunstepLenghten;
+
+    [SerializeField]
+    private float m_StepInterval;
+
+
 
     private List<GameObject> m_currentMovementBlocks = new List<GameObject>();
 
@@ -62,6 +73,42 @@ public class LAMovement : LAComponent
         [Tooltip("set it to 0.1 or more if stuck in wall")]
         public float shellOffset;                               //reduce the radius by that ratio to avoid getting stuck in wall (a value of 0.1f is nice)
     }
+
+    [System.Serializable]
+    public class MovementSettings
+    {
+        public float ForwardSpeed = 8.0f;   // Speed when walking forward
+        public float BackwardSpeed = 4.0f;  // Speed when walking backwards
+        public float StrafeSpeed = 4.0f;    // Speed when walking sideways
+        public float RunMultiplier = 2.0f;  // Speed when sprinting
+
+        public float JumpForce = 30f;
+        public AnimationCurve SlopeCurveModifier = new AnimationCurve(new Keyframe(-90.0f, 1.0f), new Keyframe(0.0f, 1.0f), new Keyframe(90.0f, 0.0f));
+        [HideInInspector]
+        public float CurrentTargetSpeed = 8f;
+
+        private bool m_Running;
+        public bool Running { get { return m_Running; } }
+
+        public void UpdateDesiredTargetSpeed(Vector3 input)
+        {
+            if (input == Vector3.zero) return;
+            if (input.x > 0 || input.x < 0)
+                CurrentTargetSpeed = StrafeSpeed; 
+
+            if (input.z < 0)
+                CurrentTargetSpeed = BackwardSpeed;
+
+            if (input.z > 0)
+                CurrentTargetSpeed = ForwardSpeed;
+
+            if (m_Running)
+                CurrentTargetSpeed *= RunMultiplier;
+            
+        }
+    }
+
+    
 
     public void SetNodePosition(BlockPiece node)
     {
@@ -101,8 +148,10 @@ public class LAMovement : LAComponent
 
     private void MoveToTarget(Vector3 position, bool faceNode)
     {
-        position += new Vector3(0f, 0.5f, 0f);
-        transform.position = Vector3.MoveTowards(transform.position, position, m_speedModifier * Time.deltaTime);
+        //position += new Vector3(0f, 0.5f, 0f);
+        //m_MovementVector = (position - transform.position).normalized;
+        m_MovementVector = Vector3.MoveTowards(transform.position, position, m_speedModifier * Time.deltaTime).normalized;
+        transform.position = m_MovementVector;
         if (faceNode)
             this.transform.rotation = Quaternion.Slerp(this.transform.rotation, DirectionRotation(position), 0.1f);
     }
@@ -226,6 +275,7 @@ public class LAMovement : LAComponent
     {
         m_pathFinder = GetComponentInChildren<Pathfinder>();
         m_Capsule = GetComponent<CapsuleCollider>();
+        m_Rigidbody = GetComponent<Rigidbody>();
 	}
 
     // Update is called once per frame
@@ -234,9 +284,83 @@ public class LAMovement : LAComponent
 
 	}
 
-    public override void FixedUpdate()
+    private float SlopeMultiplier()
     {
+        float angle = Vector3.Angle(m_GroundContactNormal, Vector3.up);
+        return movementSettings.SlopeCurveModifier.Evaluate(angle);
+    }
+
+    public override void FixedUpdate() // After completeing the fixed update we must remove the transform update form the method funcitons as all of the movement will be handled here
+    {
+        if (!ActiveComponent) return;
+        if (!Annie.Active) return;
+
         GroundCheck();
+        movementSettings.UpdateDesiredTargetSpeed(m_MovementVector);
+
+        if ((Mathf.Abs(m_MovementVector.x) > float.Epsilon || Mathf.Abs(m_MovementVector.z) > float.Epsilon) && (advancedSettings.airControl || m_IsGrounded))
+        {
+            // always move along the camera forward as it is the direction that it being aimed at
+            //Vector3 desiredMove = (transform.forward * m_MovementVector.z) + (transform.right * m_MovementVector.x);
+            Vector3 desiredMove = Vector3.ProjectOnPlane(m_MovementVector, m_GroundContactNormal).normalized;
+
+            desiredMove.x = desiredMove.x * movementSettings.CurrentTargetSpeed;
+            desiredMove.z = desiredMove.z * movementSettings.CurrentTargetSpeed;
+            desiredMove.y = desiredMove.y * movementSettings.CurrentTargetSpeed;
+
+            if (m_Rigidbody.velocity.sqrMagnitude < (movementSettings.CurrentTargetSpeed * movementSettings.CurrentTargetSpeed))
+            {
+                m_Rigidbody.AddForce(m_MovementVector.normalized * SlopeMultiplier(), ForceMode.Impulse);
+            }
+        }
+
+        if (m_IsGrounded)
+        {
+            m_Rigidbody.drag = 5f;
+
+            if (m_Jump)
+            {
+                m_Rigidbody.drag = 0f;
+                m_Rigidbody.velocity = new Vector3(m_Rigidbody.velocity.x, 0f, m_Rigidbody.velocity.z);
+                m_Rigidbody.AddForce(new Vector3(0f, movementSettings.JumpForce, 0f), ForceMode.Impulse);
+                m_Jumping = true;
+            }
+
+            if (!m_Jumping && Mathf.Abs(m_MovementVector.x) < float.Epsilon && Mathf.Abs(m_MovementVector.z) < float.Epsilon && m_Rigidbody.velocity.magnitude < 1f)
+                m_Rigidbody.Sleep();
+        }
+        else
+        {
+            m_Rigidbody.drag = 0f;
+            if (m_PreviouslyGrounded && !m_Jumping)
+                StickToGroundHelper();
+
+        }
+
+        m_Jump = false;
+        ProgressStepCycle(m_MovementVector);
+    }
+
+    private void ProgressStepCycle(Vector3 input)
+    {
+        if (m_Rigidbody.velocity.sqrMagnitude > 0 && (input.x != 0 || input.z != 0))
+            m_StepCycle += (m_Rigidbody.velocity.magnitude + (movementSettings.CurrentTargetSpeed * (!movementSettings.Running ? 1f : m_RunstepLenghten))) * Time.fixedDeltaTime;
+
+        if (!(m_StepCycle > m_NextStep)) return;
+        m_NextStep = m_StepCycle + m_StepInterval;
+        Annie.Audio.PlayFootStepAudio();
+    }
+
+    private void StickToGroundHelper()
+    {
+        RaycastHit hitInfo;
+        if (Physics.SphereCast(transform.position, m_Capsule.radius * (1.0f - advancedSettings.shellOffset), Vector3.down, out hitInfo,
+                                ((m_Capsule.height / 2f) - m_Capsule.radius) +
+                                advancedSettings.stickToGroundHelperDistance, ~0, QueryTriggerInteraction.Ignore))
+        {
+            if (Mathf.Abs(Vector3.Angle(hitInfo.normal, Vector3.up)) < 85f)
+                m_Rigidbody.velocity = Vector3.ProjectOnPlane(m_Rigidbody.velocity, hitInfo.normal);
+        }
     }
 
     /// <summary>

@@ -18,6 +18,9 @@ public class LAAudio : LAComponent
     [SerializeField]
     private AudioClip AUDIO_SCREAM;
 
+    [SerializeField]
+    private AudioClip[] m_FootstepSounds;    // an array of footstep sounds that will be randomly selected from.
+
     private AudioSource m_source;
     private AudioClip m_currentClip = new AudioClip();
 
@@ -27,12 +30,24 @@ public class LAAudio : LAComponent
 
     public bool isPlaying { get { return m_source.isPlaying; } }
 
-
 	// Use this for initialization
 	public override void Start ()
     {
         m_source = GetComponentInChildren<AudioSource>();
 	}
+
+    public void PlayFootStepAudio()
+    {
+        // pick & play a random footstep sound from the array,
+        // excluding sound at index 0
+        int n = Random.Range(1, m_FootstepSounds.Length);
+        m_source.volume = 0.5f;
+        m_source.clip = m_FootstepSounds[n];
+        m_source.PlayOneShot(m_source.clip);
+        // move picked sound to index 0 so it's not picked next time
+        m_FootstepSounds[n] = m_FootstepSounds[0];
+        m_FootstepSounds[0] = m_source.clip;
+    }
 
     private IEnumerator LoopDelay(AudioClip clip, float delay)
     {
