@@ -139,7 +139,7 @@ public class FloorLevel : MonoBehaviour
                 }
                 else
                 {
-                    int chance = (node.isCorridor) ? 4 : 3;
+                    int chance = (node.isCorridor) ? 1 : 1;
                     int random = UnityEngine.Random.Range(1, 11);
                     if (chance >= random)
                     {
