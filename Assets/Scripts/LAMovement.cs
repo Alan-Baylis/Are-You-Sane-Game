@@ -148,10 +148,10 @@ public class LAMovement : LAComponent
 
     private void MoveToTarget(Vector3 position, bool faceNode)
     {
-        //position += new Vector3(0f, 0.5f, 0f);
-        //m_MovementVector = (position - transform.position).normalized;
-        m_MovementVector = Vector3.MoveTowards(transform.position, position, m_speedModifier * Time.deltaTime).normalized;
-        transform.position = m_MovementVector;
+        position += new Vector3(0f, 0.5f, 0f);
+        m_MovementVector = (Vector3.MoveTowards(transform.position, position, m_speedModifier * Time.deltaTime) - transform.position).normalized;
+        //transform.position = Vector3.MoveTowards(transform.position, position, SlopeMultiplier() * Time.deltaTime);
+
         if (faceNode)
             this.transform.rotation = Quaternion.Slerp(this.transform.rotation, DirectionRotation(position), 0.1f);
     }
@@ -200,14 +200,6 @@ public class LAMovement : LAComponent
         if (m_pathingIndex < m_pathFinder.combinedPathNodes.Count) // Otherwise we will check once out of exception
         {
             m_nextTargetNode = m_pathFinder.combinedPathNodes[m_pathingIndex].GetComponent<BlockPiece>();
-
-            //if (m_nextTargetNode.GetY() > m_currentNodePosition.GetY())
-            //{
-            //    m_nextTargetPosition.x = m_nextTargetNode.GetX();
-            //    m_nextTargetPosition.y = m_currentNodePosition.GetY();
-            //    m_nextTargetPosition.z = m_nextTargetNode.GetZ();
-            //}
-
 
             //if (m_nextTargetNode.isOccluded)
             //{
@@ -287,7 +279,7 @@ public class LAMovement : LAComponent
     private float SlopeMultiplier()
     {
         float angle = Vector3.Angle(m_GroundContactNormal, Vector3.up);
-        return movementSettings.SlopeCurveModifier.Evaluate(angle);
+        return (movementSettings.SlopeCurveModifier.Evaluate(angle));
     }
 
     public override void FixedUpdate() // After completeing the fixed update we must remove the transform update form the method funcitons as all of the movement will be handled here
@@ -296,27 +288,25 @@ public class LAMovement : LAComponent
         if (!Annie.Active) return;
 
         GroundCheck();
-        movementSettings.UpdateDesiredTargetSpeed(m_MovementVector);
 
         if ((Mathf.Abs(m_MovementVector.x) > float.Epsilon || Mathf.Abs(m_MovementVector.z) > float.Epsilon) && (advancedSettings.airControl || m_IsGrounded))
         {
-            // always move along the camera forward as it is the direction that it being aimed at
             //Vector3 desiredMove = (transform.forward * m_MovementVector.z) + (transform.right * m_MovementVector.x);
-            Vector3 desiredMove = Vector3.ProjectOnPlane(m_MovementVector, m_GroundContactNormal).normalized;
-
-            desiredMove.x = desiredMove.x * movementSettings.CurrentTargetSpeed;
-            desiredMove.z = desiredMove.z * movementSettings.CurrentTargetSpeed;
-            desiredMove.y = desiredMove.y * movementSettings.CurrentTargetSpeed;
+            m_MovementVector = Vector3.ProjectOnPlane(m_MovementVector, m_GroundContactNormal).normalized;
+            m_MovementVector.x = m_MovementVector.x * movementSettings.CurrentTargetSpeed;
+            m_MovementVector.z = m_MovementVector.z * movementSettings.CurrentTargetSpeed;
+            m_MovementVector.y = m_MovementVector.y * movementSettings.CurrentTargetSpeed;
 
             if (m_Rigidbody.velocity.sqrMagnitude < (movementSettings.CurrentTargetSpeed * movementSettings.CurrentTargetSpeed))
             {
-                m_Rigidbody.AddForce(m_MovementVector.normalized * SlopeMultiplier(), ForceMode.Impulse);
+                float velocityY = m_Rigidbody.velocity.y;
+                m_Rigidbody.velocity = ((m_MovementVector / 2) * SlopeMultiplier() * 0.5f) + new Vector3(0f, velocityY, 0f);
             }
         }
 
         if (m_IsGrounded)
         {
-            m_Rigidbody.drag = 5f;
+            m_Rigidbody.drag = 10f;
 
             if (m_Jump)
             {
@@ -369,29 +359,6 @@ public class LAMovement : LAComponent
     /// <returns></returns>
     public BehaviourTreeStatus MoveToLastSeen() // We need to carefully combine this method with the fixed update or find a way of tickikng the behaviour tree through fixed update aswell as regualr update
     {
-
-        // This is only temporary so we can traverse the building - TODO COMPLETE FIX FOR STAIRS INCLINING AND DECLINING
-        if (m_nextTargetNode.GetY() > m_currentNodePosition.GetY())
-        {
-            float targetDistance = Vector3.Distance(m_nextTargetNode.transform.position, m_currentNodePosition.transform.position);
-            if (targetDistance < 3f && targetDistance > 1.3f) // Rough distance guess check on the incline of the stairs
-            {
-                if (!m_climbingStairs)
-                {
-                    m_speedModifier = 2f; // Extra movespeed applied to force up the stairs
-                    m_climbingStairs = true;
-                }
-            }
-            else
-            {
-                if (m_climbingStairs)
-                {
-                    m_speedModifier = 1f;
-                    m_climbingStairs = false;
-                }
-            }
-        }
-
         if (TrackToObject(m_pathFinder.combinedPathNodes[m_pathingIndex], true))
         {
             m_pathingIndex++;
@@ -426,28 +393,6 @@ public class LAMovement : LAComponent
 
     public BehaviourTreeStatus MoveToDestination()
     {
-        // This is only temporary so we can traverse the building - TODO COMPLETE FIX FOR STAIRS INCLINING AND DECLINING
-        if (m_nextTargetNode.GetY() > m_currentNodePosition.GetY())
-        {
-            float targetDistance = Vector3.Distance(m_nextTargetNode.transform.position, m_currentNodePosition.transform.position);
-            if (targetDistance < 3f && targetDistance > 1.3f) // Rough distance guess check on the incline of the stairs
-            {
-                if (!m_climbingStairs)
-                {
-                    m_speedModifier = 2f; // Extra movespeed applied to force up the stairs
-                    m_climbingStairs = true;
-                }
-            }
-            else
-            {
-                if (m_climbingStairs)
-                {
-                    m_speedModifier = 1f;
-                    m_climbingStairs = false;
-                }
-            }
-        }
-
         if (TrackToObject(m_pathFinder.combinedPathNodes[m_pathingIndex], true))
         {
             m_pathingIndex++;
