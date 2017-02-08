@@ -25,10 +25,10 @@ public class PlayerFlashLight : PlayerComponent
     // Use this for initialization
     public override void Start ()
     {
-        flashLight = GetComponentInChildren<Light>();
-        flashSound = flashLight.gameObject.GetComponent<AudioSource>();
-        InitializeExclusionLayers();
-        TurnFlashOff();
+        //flashLight = GetComponentInChildren<Light>();
+        //flashSound = flashLight.gameObject.GetComponent<AudioSource>();
+        //InitializeExclusionLayers();
+        //TurnFlashOff();
 	}
 
     private void InitializeExclusionLayers()
