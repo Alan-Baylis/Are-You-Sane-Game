@@ -50,6 +50,14 @@ public class PAIG : MonoBehaviour
         //        Debug.LogWarning("Regenerated Floors!");
         //    }
         //}
+        if (annieSpawned)
+        {
+            if (AnnieObject.Movement.currentFloor != h_player.CurrentFloor)
+            {
+                
+            }
+        }
+
 
 
         if (AIHumanTesting)
@@ -128,26 +136,26 @@ public class PAIG : MonoBehaviour
 
         //EvaluateRandomSounds();
 
-        if (AnnieObject.Active)
-        {
-            if (AnnieObject.Movement.currentFloor != h_player.CurrentFloor)
-            {
-                if (m_moveFloorTimer > 0)
-                {
-                    m_moveFloorTimer -= Time.deltaTime;
-                }
-                else
-                {
-                    MoveAnnieToPlayerFloor();
-                    m_moveFloorTimer = MAX_MOVE_FLOOR_TIME;
-                }
-            }
-            else
-            {
-                if (m_moveFloorTimer != MAX_MOVE_FLOOR_TIME)
-                    m_moveFloorTimer = MAX_MOVE_FLOOR_TIME;
-            }            
-        }
+        //if (AnnieObject.Active)
+        //{
+        //    if (AnnieObject.Movement.currentFloor != h_player.CurrentFloor)
+        //    {
+        //        if (m_moveFloorTimer > 0)
+        //        {
+        //            m_moveFloorTimer -= Time.deltaTime;
+        //        }
+        //        else
+        //        {
+        //            MoveAnnieToPlayerFloor();
+        //            m_moveFloorTimer = MAX_MOVE_FLOOR_TIME;
+        //        }
+        //    }
+        //    else
+        //    {
+        //        if (m_moveFloorTimer != MAX_MOVE_FLOOR_TIME)
+        //            m_moveFloorTimer = MAX_MOVE_FLOOR_TIME;
+        //    }            
+        //}
 
     }
 

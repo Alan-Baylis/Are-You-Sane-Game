@@ -77,33 +77,20 @@ public class LAMovement : LAComponent
     [System.Serializable]
     public class MovementSettings
     {
-        public float ForwardSpeed = 8.0f;   // Speed when walking forward
-        public float BackwardSpeed = 4.0f;  // Speed when walking backwards
-        public float StrafeSpeed = 4.0f;    // Speed when walking sideways
-        public float RunMultiplier = 2.0f;  // Speed when sprinting
-
+        private bool m_Running = false;
+        public float RunMultiplier = 2.0f;      // Speed when sprinting
+        public float CurrentTargetSpeed = 8f;
         public float JumpForce = 30f;
         public AnimationCurve SlopeCurveModifier = new AnimationCurve(new Keyframe(-90.0f, 1.0f), new Keyframe(0.0f, 1.0f), new Keyframe(90.0f, 0.0f));
-        [HideInInspector]
-        public float CurrentTargetSpeed = 8f;
-
-        private bool m_Running;
         public bool Running { get { return m_Running; } }
 
-        public void UpdateDesiredTargetSpeed(Vector3 input)
+        public void SetRunning(bool active)
         {
-            if (input == Vector3.zero) return;
-            if (input.x > 0 || input.x < 0)
-                CurrentTargetSpeed = StrafeSpeed; 
-
-            if (input.z < 0)
-                CurrentTargetSpeed = BackwardSpeed;
-
-            if (input.z > 0)
-                CurrentTargetSpeed = ForwardSpeed;
-
-            if (m_Running)
-                CurrentTargetSpeed *= RunMultiplier;
+            if (m_Running != active)
+            {
+                m_Running = active;
+                CurrentTargetSpeed = (active) ? CurrentTargetSpeed * RunMultiplier : CurrentTargetSpeed / RunMultiplier;
+            }
         }
     }
 
@@ -334,7 +321,7 @@ public class LAMovement : LAComponent
         if (m_Rigidbody.velocity.sqrMagnitude > 0 && (input.x != 0 || input.z != 0))
             m_StepCycle += (m_Rigidbody.velocity.magnitude + (movementSettings.CurrentTargetSpeed * (!movementSettings.Running ? 1f : m_RunstepLenghten))) * Time.fixedDeltaTime;
 
-        if (!(m_StepCycle > m_NextStep)) return;
+        if (!(m_StepCycle > m_NextStep) || Annie.Attack.isAttacking) return;
         m_NextStep = m_StepCycle + m_StepInterval;
         Annie.Audio.PlayFootStepAudio();
     }

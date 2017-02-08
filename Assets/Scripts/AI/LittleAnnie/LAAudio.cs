@@ -21,21 +21,31 @@ public class LAAudio : LAComponent
     [SerializeField]
     private AudioClip[] m_FootstepSounds;    // an array of footstep sounds that will be randomly selected from.
 
+    [SerializeField]
     private AudioSource m_VoiceSource;
+
+    [SerializeField]
     private AudioSource m_FeetSource;
+
     private AudioClip m_currentClip = new AudioClip();
 
     private float m_audioTimer = 0.0f;
     private bool m_playLoopDelay;
     private float m_loopDelay = 0.0f;
 
+    
+
     public bool isPlaying { get { return m_VoiceSource.isPlaying; } }
 
 	// Use this for initialization
 	public override void Start ()
     {
-        m_VoiceSource = MyHelper.FindComponentInChildrenWithTag<AudioSource>(this.gameObject, "AnnieVoice");
-        m_FeetSource = MyHelper.FindComponentInChildrenWithTag<AudioSource>(this.gameObject, "AnnieFeet");
+
+    }
+
+    public void DirectorSetVolume(bool sameFloorAsPlayer)
+    {
+        //m_FeetSource.volume = (sameFloorAsPlayer) ? 0.
     }
 
     public void PlayFootStepAudio()
@@ -43,7 +53,7 @@ public class LAAudio : LAComponent
         // pick & play a random footstep sound from the array,
         // excluding sound at index 0
         int n = Random.Range(1, m_FootstepSounds.Length);
-        m_FeetSource.volume = 0.5f;
+        //m_FeetSource.volume = 0.5f;
         m_FeetSource.clip = m_FootstepSounds[n];
         m_FeetSource.PlayOneShot(m_FeetSource.clip);
         // move picked sound to index 0 so it's not picked next time
