@@ -58,7 +58,7 @@ public class BuildingGeneration : MonoBehaviour
 
     public List<BlockPiece> potentialExits;
 
-    public FloorLevel[] floorBlocks;
+    public FloorLevel[] Floors;
     public GameObject[] reworkedMeshes;
     public GameObject   exitModel;
     
@@ -126,7 +126,7 @@ public class BuildingGeneration : MonoBehaviour
     public void InitializeParameters()
     {
         potentialExits = new List<BlockPiece>();
-        floorBlocks = new FloorLevel[absoluteY];
+        Floors = new FloorLevel[absoluteY];
         blocks = new GameObject[absoluteX, absoluteY, absoluteZ];
         floors = new GameObject[absoluteY][,];
     }
@@ -231,8 +231,8 @@ public class BuildingGeneration : MonoBehaviour
         AddOcclusionTrigger(thisBlock);
         AddPositionTrigger(thisBlock);
 
-        if (x == floorBlocks[floorParent.FloorNumber].StartX && z == floorBlocks[floorParent.FloorNumber].StartZ)        
-            floorBlocks[floorParent.FloorNumber].startBlock = thisBlock;        
+        if (x == Floors[floorParent.FloorNumber].StartX && z == Floors[floorParent.FloorNumber].StartZ)        
+            Floors[floorParent.FloorNumber].startBlock = thisBlock;        
 
         if (floorParent.virtualUnwalkables.Count > 0)
         {
@@ -251,10 +251,10 @@ public class BuildingGeneration : MonoBehaviour
     /// <param name="y">Floor number.</param>
     private void SetNeighbors(int y)
     {
-        if (floorBlocks[y].floorBlocks.Count == 0)
+        if (Floors[y].floorBlocks.Count == 0)
             Debug.LogError("neighbor setting was invalid");
         
-        foreach (BlockPiece node in floorBlocks[y].floorBlocks)
+        foreach (BlockPiece node in Floors[y].floorBlocks)
         {
             int x = node.GetX();
             int z = node.GetZ();
@@ -410,7 +410,7 @@ public class BuildingGeneration : MonoBehaviour
     public void SetDoorNode()
     {
         Debug.Log("Called Set Door");
-        List<BlockPiece> edgeNodes = floorBlocks[0].floorBlocks.FindAll(node => node.isEdgeNodeAbs && !node.isCornerNodeAbs);
+        List<BlockPiece> edgeNodes = Floors[0].floorBlocks.FindAll(node => node.isEdgeNodeAbs && !node.isCornerNodeAbs);
         if (edgeNodes.Count != 0)
         {
             int randomIndex = UnityEngine.Random.Range(0, edgeNodes.Count);
@@ -442,7 +442,7 @@ public class BuildingGeneration : MonoBehaviour
         }
 
         doorNode.CreateExit(exitModel, true, false);
-        floorBlocks[0].doorBlocks.Add(doorNode);
+        Floors[0].doorBlocks.Add(doorNode);
         Debug.Log("Door at END : " + doorNode.name);
     }
 
@@ -453,8 +453,8 @@ public class BuildingGeneration : MonoBehaviour
     public BlockPiece GetRandomNode()
     {
         int chosenY = UnityEngine.Random.Range(0, absoluteY);
-        int chosenX = UnityEngine.Random.Range(floorBlocks[chosenY].StartX, floorBlocks[chosenY].EndX);
-        int chosenZ = UnityEngine.Random.Range(floorBlocks[chosenY].StartZ, floorBlocks[chosenY].EndZ);
+        int chosenX = UnityEngine.Random.Range(Floors[chosenY].StartX, Floors[chosenY].EndX);
+        int chosenZ = UnityEngine.Random.Range(Floors[chosenY].StartZ, Floors[chosenY].EndZ);
         return blocks[chosenX, chosenY, chosenZ].GetComponent<BlockPiece>();
     }
 
@@ -517,7 +517,7 @@ public class BuildingGeneration : MonoBehaviour
     /// <param name="y">Floor number.</param>
     public void DecorateFloorRooms(int y)
     {
-        foreach(Room room in floorBlocks[y].AllRooms)
+        foreach(Room room in Floors[y].AllRooms)
         {
             switch (room.scene)
             {
@@ -554,7 +554,7 @@ public class BuildingGeneration : MonoBehaviour
     private void DecorateStairNodes(int y)
     {
         List<DecorationPiece> decorationPieces = new List<DecorationPiece>();
-        foreach (BlockPiece node in floorBlocks[y].stairBlocks)
+        foreach (BlockPiece node in Floors[y].stairBlocks)
         {
             if (node.nodeType == BlockType.DISABLED)
                 continue;
@@ -579,12 +579,12 @@ public class BuildingGeneration : MonoBehaviour
     /// <param name="y">Floor number.</param>
     private void DecorateFloorCorridor(int y)
     {
-        floorBlocks[y].routeBlocks.RemoveAll(n => n == null);
-        int numberToDecorate = floorBlocks[y].routeBlocks.Count / 2;
+        Floors[y].routeBlocks.RemoveAll(n => n == null);
+        int numberToDecorate = Floors[y].routeBlocks.Count / 2;
         int currentDecorated = 0;
         List<DecorationPiece> decorationPieces = new List<DecorationPiece>();
 
-        foreach (BlockPiece node in floorBlocks[y].routeBlocks)
+        foreach (BlockPiece node in Floors[y].routeBlocks)
         {
             if (node.nodeType == BlockType.DISABLED)
                 continue;
@@ -647,8 +647,8 @@ public class BuildingGeneration : MonoBehaviour
             {
                 foreach (GameObject node in floorPartition)
                 {
-                    if (!floorBlocks[floor].routeBlocks.Contains(node.GetComponent<BlockPiece>()))
-                        floorBlocks[floor].routeBlocks.Add(node.GetComponent<BlockPiece>()); // REVISE THE OBTAINING LIST TO GET BLOCK PIECES NOT GAMEOBJECTS
+                    if (!Floors[floor].routeBlocks.Contains(node.GetComponent<BlockPiece>()))
+                        Floors[floor].routeBlocks.Add(node.GetComponent<BlockPiece>()); // REVISE THE OBTAINING LIST TO GET BLOCK PIECES NOT GAMEOBJECTS
                 }
             }
             else
@@ -671,13 +671,13 @@ public class BuildingGeneration : MonoBehaviour
         if (y < boundaryY)
         {
             // Potenetial Optimization we can remove from qurantinedList any common nodes between usedCornerParents list
-            List<BlockPiece> quarantinedStairNodes = new List<BlockPiece>(floorBlocks[y].floorBlocks);
+            List<BlockPiece> quarantinedStairNodes = new List<BlockPiece>(Floors[y].floorBlocks);
 
             // Make a progressive counter to assign incrementing values in array
             int incrementCounter = 0;
 
             // Have to take the number based on the floor above to help prevent over populating the floor above with entrances and generating unwalkable paths
-            int stairBlocks = floorBlocks[y + 1].totalBlocks;
+            int stairBlocks = Floors[y + 1].totalBlocks;
             int maxStairChance = Mathf.RoundToInt(stairBlocks / 16f);
             int stairCount = (maxStairChance >= 1) ? UnityEngine.Random.Range(1, maxStairChance) : 1;
             int proximityFailCount = 0;
@@ -728,12 +728,12 @@ public class BuildingGeneration : MonoBehaviour
                             {
 
                                 // Every Door must have a path to every stair connection otherwise is it discounted
-                                if (floorBlocks[y].doorBlocks.Count == 0)
+                                if (Floors[y].doorBlocks.Count == 0)
                                     Debug.LogError("No Door Block Count");
                                 
 
                                 bool doorsToNeighborFlag = false;
-                                foreach (BlockPiece dNode in floorBlocks[y].doorBlocks)
+                                foreach (BlockPiece dNode in Floors[y].doorBlocks)
                                 {
                                     GetComponent<Pathfinder>().SetOnNode(dNode);
                                     if (!GetComponent<Pathfinder>().GetPath(neighborNode.gameObject, l => l != node.gameObject))
@@ -750,14 +750,14 @@ public class BuildingGeneration : MonoBehaviour
                                 }
 
 
-                                if (floorBlocks[y].stairBlocks.Count > 0)
+                                if (Floors[y].stairBlocks.Count > 0)
                                 {
                                     bool notAllPaths = false;
-                                    foreach (BlockPiece dNode in floorBlocks[y].doorBlocks)
+                                    foreach (BlockPiece dNode in Floors[y].doorBlocks)
                                     {
                                         GetComponent<Pathfinder>().SetOnNode(dNode);
 
-                                        foreach (BlockPiece pNode in floorBlocks[y].stairBlocks)
+                                        foreach (BlockPiece pNode in Floors[y].stairBlocks)
                                         {
                                             if (!GetComponent<Pathfinder>().GetPath(pNode.parent, l => l != node.gameObject))
                                             {
@@ -804,7 +804,7 @@ public class BuildingGeneration : MonoBehaviour
                                     if (startNode.isWalkable && !startNode.isStairNode)
                                     {
                                         node.validParents.Add(neighborNode.gameObject);
-                                        GetComponent<Pathfinder>().SetOnNode(floorBlocks[y].doorBlocks[0]);
+                                        GetComponent<Pathfinder>().SetOnNode(Floors[y].doorBlocks[0]);
                                     }
                                 }
                                 else
@@ -827,13 +827,13 @@ public class BuildingGeneration : MonoBehaviour
                         {
                             aboveNode.testing = true;
                             aboveNode.isWalkable = false;
-                            if (!floorBlocks[y + 1].unWalkableBlocks.Contains(aboveNode)) // Reminder to add co-ordinates to the floor above to keep the node at this position
-                                floorBlocks[y + 1].unWalkableBlocks.Add(aboveNode);
+                            if (!Floors[y + 1].unWalkableBlocks.Contains(aboveNode)) // Reminder to add co-ordinates to the floor above to keep the node at this position
+                                Floors[y + 1].unWalkableBlocks.Add(aboveNode);
                         }
                         else
                         {
                             // This node does not exist but may exist when regenerated
-                            floorBlocks[y + 1].virtualUnwalkables.Add(new NodeVector2(node.GetX(), node.GetZ()));
+                            Floors[y + 1].virtualUnwalkables.Add(new NodeVector2(node.GetX(), node.GetZ()));
                         }
 
                         int parentIndex = UnityEngine.Random.Range(0, node.validParents.Count);
@@ -851,8 +851,8 @@ public class BuildingGeneration : MonoBehaviour
                         if (parentNode.isStairConnection)
                             node.parent.GetComponent<BlockPiece>().isStairShared = true;
 
-                        if (!floorBlocks[y].stairConnectionBlocks.Contains(parentNode))
-                            floorBlocks[y].stairConnectionBlocks.Add(parentNode); // stair connections added
+                        if (!Floors[y].stairConnectionBlocks.Contains(parentNode))
+                            Floors[y].stairConnectionBlocks.Add(parentNode); // stair connections added
 
                         parentNode.isStairConnection = true;
                         if (!node.minimumConnections.Contains(node.parent))
@@ -878,9 +878,9 @@ public class BuildingGeneration : MonoBehaviour
                             }
                         }
 
-                        if (!floorBlocks[y + 1].doorBlocks.Contains(startNode))
+                        if (!Floors[y + 1].doorBlocks.Contains(startNode))
                         {
-                            floorBlocks[y + 1].doorBlocks.Add(startNode); // door nodes added to the floor above
+                            Floors[y + 1].doorBlocks.Add(startNode); // door nodes added to the floor above
                         }
                         else
                         {
@@ -890,7 +890,7 @@ public class BuildingGeneration : MonoBehaviour
                         startNode.isCorridor = true;
                         startNode.testing = true;
                         startNode.isDoorNode = true;
-                        floorBlocks[y].stairBlocks.Add(node); // Stair blocks added
+                        Floors[y].stairBlocks.Add(node); // Stair blocks added
                         incrementCounter++;
 
                         // TWO lines below not needed ___
@@ -919,12 +919,12 @@ public class BuildingGeneration : MonoBehaviour
         // Fixed nodes are based on the current floor and will only affect the generation of this Floor
         // Irrelevant of the floor index, we want to create fixed nodes on the floor
         // Reset Counter
-        List<BlockPiece> floorNodes = new List<BlockPiece>(floorBlocks[y].floorBlocks);
+        List<BlockPiece> floorNodes = new List<BlockPiece>(Floors[y].floorBlocks);
         int incrementCounter = 0;
-        int fixedBlocks = floorBlocks[y].totalBlocks;
+        int fixedBlocks = Floors[y].totalBlocks;
         int maxFixedChance = Mathf.RoundToInt(fixedBlocks / 6f);
         int fixedCount = (maxFixedChance >= 1) ? UnityEngine.Random.Range(1, maxFixedChance) : 1;
-        if (floorBlocks[y].floorBlocks.Count == 0)
+        if (Floors[y].floorBlocks.Count == 0)
             Debug.LogError("NO FLOOR BLOCKS - GENERATE FIXED");
 
         int safetyCycle = 0;
@@ -946,7 +946,7 @@ public class BuildingGeneration : MonoBehaviour
                 {
 
                     bool doorFlag = false;
-                    foreach (BlockPiece dNode in floorBlocks[y].doorBlocks)
+                    foreach (BlockPiece dNode in Floors[y].doorBlocks)
                     {
                         GetComponent<Pathfinder>().SetOnNode(dNode);
                         if (!GetComponent<Pathfinder>().GetPath(node))
@@ -966,7 +966,7 @@ public class BuildingGeneration : MonoBehaviour
 
 
                     bool stairFlag = false;                    
-                    foreach (BlockPiece sNode in floorBlocks[y].stairBlocks)
+                    foreach (BlockPiece sNode in Floors[y].stairBlocks)
                     {
                         GetComponent<Pathfinder>().SetOnNode(sNode.parent);
                         if (!GetComponent<Pathfinder>().GetPath(node))
@@ -986,7 +986,7 @@ public class BuildingGeneration : MonoBehaviour
 
                     node.testing = true;
                     node.isFixedNode = true;
-                    floorBlocks[y].fixedNodes.Add(node);
+                    Floors[y].fixedNodes.Add(node);
                     incrementCounter++;
                     continue;
                 }
@@ -1069,21 +1069,21 @@ public class BuildingGeneration : MonoBehaviour
     /// <param name="y">Floor number.</param>
     private void GenerateRandomPath(int y)
     {
-        floorBlocks[y].fixedNodes.RemoveAll(n => n == null);
-        for (int i = 0; i < floorBlocks[y].fixedNodes.Count; i++)
+        Floors[y].fixedNodes.RemoveAll(n => n == null);
+        for (int i = 0; i < Floors[y].fixedNodes.Count; i++)
         {
-            List<BlockPiece> floorStairs = new List<BlockPiece>(floorBlocks[y].stairBlocks);
-            GetComponent<Pathfinder>().SetOnNode(floorBlocks[y].fixedNodes[i].gameObject);
+            List<BlockPiece> floorStairs = new List<BlockPiece>(Floors[y].stairBlocks);
+            GetComponent<Pathfinder>().SetOnNode(Floors[y].fixedNodes[i].gameObject);
 
             // If we are not the last iteration
-            if (i < floorBlocks[y].fixedNodes.Count - 1) 
+            if (i < Floors[y].fixedNodes.Count - 1) 
             {
                 // Find the next node for all fixed nodes with a chance of pathing to the stair node
                 if (y < boundaryY)
                 {
                     if (floorStairs.Count != 0) // Savior
                     {
-                        int respectiveChance = UnityEngine.Random.Range(0, floorBlocks[y].fixedNodes.Count);
+                        int respectiveChance = UnityEngine.Random.Range(0, Floors[y].fixedNodes.Count);
                         if (respectiveChance == 0)
                         {
                             int stairIndex = UnityEngine.Random.Range(0, floorStairs.Count);
@@ -1105,9 +1105,9 @@ public class BuildingGeneration : MonoBehaviour
                     }
                 }
 
-                if (i + 1 < floorBlocks[y].fixedNodes.Count)
+                if (i + 1 < Floors[y].fixedNodes.Count)
                 {
-                    if (GetComponent<Pathfinder>().GetPath(floorBlocks[y].fixedNodes[i + 1].gameObject))
+                    if (GetComponent<Pathfinder>().GetPath(Floors[y].fixedNodes[i + 1].gameObject))
                     {
                         CombinePathing(y);
                     }
@@ -1126,7 +1126,7 @@ public class BuildingGeneration : MonoBehaviour
             {
                 if (y < boundaryY)
                 {
-                    foreach (BlockPiece node in floorBlocks[y].stairBlocks)
+                    foreach (BlockPiece node in Floors[y].stairBlocks)
                     {
                         if (node.parent == null)
                             Debug.LogError(node.name + "NO STAIR PARENT On Floor: " + node.GetY());
@@ -1167,7 +1167,7 @@ public class BuildingGeneration : MonoBehaviour
         thisFloor.AddComponent<FloorLevel>();
         thisFloor.GetComponent<FloorLevel>().FloorNumber = y;
         floors[y] = new GameObject[absoluteX, absoluteZ];                 // Absolute Matrix - however it is likely to not be fully filled
-        floorBlocks[y] = thisFloor.GetComponent<FloorLevel>();
+        Floors[y] = thisFloor.GetComponent<FloorLevel>();
 
         int newFloorX = UnityEngine.Random.Range(3, 10);
         int newFloorZ = UnityEngine.Random.Range(3, 10);
@@ -1181,12 +1181,12 @@ public class BuildingGeneration : MonoBehaviour
             startZ = selected.z;
         }
 
-        floorBlocks[y].SetDimensions(startX, startZ, newFloorX, newFloorZ);
+        Floors[y].SetDimensions(startX, startZ, newFloorX, newFloorZ);
         BoxCollider floorEvent = thisFloor.AddComponent<BoxCollider>();
         floorEvent.isTrigger = true;
         floorEvent.center = new Vector3(0f, 1.75f, 0f);
         floorEvent.size = new Vector3((5 * absoluteX), 3f, (5 * absoluteZ));
-        Debug.Log("Floor[" + y + "] : contains " + floorBlocks[y].totalBlocks + " blocks");
+        Debug.Log("Floor[" + y + "] : contains " + Floors[y].totalBlocks + " blocks");
         ConfigureFloorGrid(y);
     }
 
@@ -1239,7 +1239,7 @@ public class BuildingGeneration : MonoBehaviour
     /// <param name="y">Floor number</param>
     private void ResetFloorVisited(int y)
     {
-        floorBlocks[y].isVisited = false;
+        Floors[y].isVisited = false;
     }
 
     /// <summary>
@@ -1248,7 +1248,7 @@ public class BuildingGeneration : MonoBehaviour
     /// <param name="y">Floor number.</param>
     private void TestPlaneDecoration(int y)
     {
-        foreach(BlockPiece node in floorBlocks[y].floorBlocks)
+        foreach(BlockPiece node in Floors[y].floorBlocks)
         {
             node.SetDecoration(m_TestPlane);   
         }
@@ -1283,7 +1283,7 @@ public class BuildingGeneration : MonoBehaviour
 
     private void CreateLightsOnFloor(int y)
     {
-        floorBlocks[y].CreateLights(m_LightPrefab);
+        Floors[y].CreateLights(m_LightPrefab);
     }
 
     /// <summary>
@@ -1294,7 +1294,7 @@ public class BuildingGeneration : MonoBehaviour
     private void PostProccessFloor(int y)
     {
         List<int> iNeighbours = new List<int>();
-        foreach (BlockPiece node in floorBlocks[y].routeBlocks) // Route blocks no longer contains stair nodes
+        foreach (BlockPiece node in Floors[y].routeBlocks) // Route blocks no longer contains stair nodes
         {
             for (int n = 0; n < node.neighbors.Length; n++)
             {
@@ -1338,17 +1338,17 @@ public class BuildingGeneration : MonoBehaviour
         int successCounter = 0;
 
         // We can maybe have null references in list where the nodes used to be
-        floorBlocks[y].fixedNodes.RemoveAll(n => n == null); 
-        foreach (BlockPiece node in floorBlocks[y].doorBlocks)
+        Floors[y].fixedNodes.RemoveAll(n => n == null); 
+        foreach (BlockPiece node in Floors[y].doorBlocks)
         {
-            if (node.isStairConnection || node == floorBlocks[y].fixedNodes[0])
+            if (node.isStairConnection || node == Floors[y].fixedNodes[0])
             {
                 successCounter++;
                 continue;
             }
 
             GetComponent<Pathfinder>().SetOnNode(node.gameObject);
-            if (GetComponent<Pathfinder>().GetPath(floorBlocks[y].fixedNodes[0].gameObject))
+            if (GetComponent<Pathfinder>().GetPath(Floors[y].fixedNodes[0].gameObject))
             {
                 successCounter++;
             }
@@ -1367,8 +1367,8 @@ public class BuildingGeneration : MonoBehaviour
     private void GenerateRooms(int y)
     {
         // Could Potentially optimize search into the same one for other route block loops
-        floorBlocks[y].floorBlocks.RemoveAll(n => n == null);
-        foreach (BlockPiece node in floorBlocks[y].routeBlocks)
+        Floors[y].floorBlocks.RemoveAll(n => n == null);
+        foreach (BlockPiece node in Floors[y].routeBlocks)
         {
             for (int n = 0; n < node.neighbors.Length; n++)
             {
@@ -1379,7 +1379,7 @@ public class BuildingGeneration : MonoBehaviour
                     if (!neighborNode.isCorridor && !neighborNode.isRoom && !neighborNode.isStairNode && neighborNode.isWalkable)
                     {
                         FloodNodeOut(node.neighbors[n]);                            // Flood fill out using reccursion
-                        floorBlocks[y].AllRooms.Add(new Room(floodContainer));      // Create a room with the captured nodes from reccursion
+                        Floors[y].AllRooms.Add(new Room(floodContainer));      // Create a room with the captured nodes from reccursion
                         SortFloodEntrances();                                       // Sort the random entrances to the rooms from the current route
                         ClearFloodFill();                                           // Clear the flood fill container ready for the next iteration
                     }
@@ -1431,7 +1431,7 @@ public class BuildingGeneration : MonoBehaviour
     /// <param name="y">Floor number.</param>
     private void AdjustFloorNodeProperties(int y)
     {
-        foreach (BlockPiece node in floorBlocks[y].floorBlocks)
+        foreach (BlockPiece node in Floors[y].floorBlocks)
         {
             node.ConfigureAcceptedIndicies();
             for (int n = 0; n < node.neighbors.Length; n++)
@@ -1456,8 +1456,8 @@ public class BuildingGeneration : MonoBehaviour
         // Now we need to set data for the next iteration of the FLOOR much like the pathing did for the next FIXED Node
         // Here we can set minimum connections allowed for each piece based on how many nieghbors are also on the path
         // Stair node will only have 1 neighbor already set still as the parent from PATHFINDER
-        floorBlocks[y].routeBlocks.RemoveAll(n => n == null);
-        foreach (BlockPiece node in floorBlocks[y].routeBlocks)
+        Floors[y].routeBlocks.RemoveAll(n => n == null);
+        foreach (BlockPiece node in Floors[y].routeBlocks)
         {
             node.roomBelonging = RoomType.CORRIDOR;
             node.isCorridor = true;
@@ -1473,7 +1473,7 @@ public class BuildingGeneration : MonoBehaviour
                     if (node.neighbors[i] != null)
                     {
                         BlockPiece neighbor = node.neighbors[i].GetComponent<BlockPiece>();
-                        if (floorBlocks[y].routeBlocks.Contains(neighbor) && !node.minimumConnections.Contains(node.neighbors[i]) && !neighbor.isStairNode)                        
+                        if (Floors[y].routeBlocks.Contains(neighbor) && !node.minimumConnections.Contains(node.neighbors[i]) && !neighbor.isStairNode)                        
                             node.minimumConnections.Add(node.neighbors[i]);                        
                     }
                 }
@@ -1537,7 +1537,7 @@ public class BuildingGeneration : MonoBehaviour
     /// <param name="y">Floor number.</param>
     private void ClearFloorAll(int y)
     {
-        floorBlocks[y].floorBlocks.Clear();
+        Floors[y].floorBlocks.Clear();
     }
 
     /// <summary>
@@ -1546,7 +1546,7 @@ public class BuildingGeneration : MonoBehaviour
     /// <param name="y"></param>
     private void ClearConsecutiveStair(int y)
     {
-        floorBlocks[y].RemoveConsecutiveStairs();
+        Floors[y].RemoveConsecutiveStairs();
     }
 
     /// <summary>
@@ -1556,8 +1556,8 @@ public class BuildingGeneration : MonoBehaviour
     /// <param name="routeRemoval">Route removal match</param>
     private void ClearRoomsAndRoutes(int y, Predicate<BlockPiece> routeRemoval)
     {
-        floorBlocks[y].AllRooms.Clear();
-        floorBlocks[y].routeBlocks.RemoveAll(routeRemoval);
+        Floors[y].AllRooms.Clear();
+        Floors[y].routeBlocks.RemoveAll(routeRemoval);
     }
 
     /// <summary>
@@ -1566,8 +1566,8 @@ public class BuildingGeneration : MonoBehaviour
     /// <param name="y">Floor number.</param>
     private void ClearStairNodes(int y)
     {
-        floorBlocks[y].stairBlocks.Clear();
-        floorBlocks[y].stairConnectionBlocks.Clear();
+        Floors[y].stairBlocks.Clear();
+        Floors[y].stairConnectionBlocks.Clear();
     }
 
     /// <summary>
@@ -1576,7 +1576,7 @@ public class BuildingGeneration : MonoBehaviour
     /// <param name="y">Floor number.</param>
     private void ClearUnwalkables(int y)
     {
-        floorBlocks[y].unWalkableBlocks.Clear();
+        Floors[y].unWalkableBlocks.Clear();
     }
 
     /// <summary>
@@ -1585,10 +1585,10 @@ public class BuildingGeneration : MonoBehaviour
     /// <param name="y"></param>
     private void ClearNextConnections(int y)
     {
-        if (y + 1 < floorBlocks.Length)
+        if (y + 1 < Floors.Length)
         {
-            floorBlocks[y + 1].doorBlocks.Clear();
-            floorBlocks[y + 1].unWalkableBlocks.Clear();
+            Floors[y + 1].doorBlocks.Clear();
+            Floors[y + 1].unWalkableBlocks.Clear();
         }
     }
 
@@ -1599,15 +1599,15 @@ public class BuildingGeneration : MonoBehaviour
     /// <param name="nodes">Node search.</param>
     private void FreeUnvaluedNodes(int y, Predicate<BlockPiece> nodes)
     {
-        List<BlockPiece> nodesToRemove = floorBlocks[y].floorBlocks.FindAll(nodes);
-        floorBlocks[y].fixedNodes.Clear(); // IMPORTANT CLEAR THE FIXED NODES HERE <---------------------------
+        List<BlockPiece> nodesToRemove = Floors[y].floorBlocks.FindAll(nodes);
+        Floors[y].fixedNodes.Clear(); // IMPORTANT CLEAR THE FIXED NODES HERE <---------------------------
         int safetyCycle = 0;
         while (nodesToRemove.Count != 0)
         {
             BlockPiece node = nodesToRemove[0];
             blocks[node.GetX(), y, node.GetZ()] = null;
             floors[y][node.GetX(), node.GetZ()] = null;
-            floorBlocks[y].floorBlocks.Remove(node);
+            Floors[y].floorBlocks.Remove(node);
             nodesToRemove.Remove(node);
 
             // Potential to remove all other node conditions here
@@ -1669,9 +1669,9 @@ public class BuildingGeneration : MonoBehaviour
     private FloorRebuilder IdentifyFrame(SafetyGeneration safety, FloorNodeType[] types)
     {
         if (safety.type == DemolishType.Full) return null;                          // No Frame is needed for a full demolition
-        FloorRebuilder frame = floorBlocks[safety.floor].GetFloorFrameWork(types);  // Obtain the frame with the type blocks for minimum dimensions
+        FloorRebuilder frame = Floors[safety.floor].GetFloorFrameWork(types);  // Obtain the frame with the type blocks for minimum dimensions
         if (safety.type == DemolishType.Limit)                                      // Limit demolitions must set an additional overlap
-            frame.SetFloorOverlap(floorBlocks[safety.floor - 1]);        
+            frame.SetFloorOverlap(Floors[safety.floor - 1]);        
 
         Debug.Log("Lowest Node Coords  [ " + frame.Xminimum + ", " + frame.Zminimum + " ]");
         Debug.Log("Highest Node Coords [ " + frame.Xmaximum + ", " + frame.Zmaximum + " ]");
@@ -1686,8 +1686,8 @@ public class BuildingGeneration : MonoBehaviour
     /// <returns>Type of demolition for the given floor.</returns>
     private DemolishType GetDemolishType(int y, int playerY)
     {
-        bool entranceExists = (floorBlocks[y].doorBlocks.Count != 0);
-        return (y + 1 < floorBlocks.Length && (y + 1 == playerY || !floorBlocks[y + 1].isVisited)) ?
+        bool entranceExists = (Floors[y].doorBlocks.Count != 0);
+        return (y + 1 < Floors.Length && (y + 1 == playerY || !Floors[y + 1].isVisited)) ?
                 (entranceExists ? DemolishType.Still : DemolishType.Limit) :
                 (entranceExists ? DemolishType.Prime : DemolishType.Full);
     }
@@ -1704,7 +1704,7 @@ public class BuildingGeneration : MonoBehaviour
     private bool ConditionNewFrame(int x, int z, int boundX, int boundZ, int y)
     {
         // Check there is at least 1 overlap in blocks to assure a possible stair node can be created
-        return (floorBlocks[y - 1].floorBlocks.FindAll(node => node.GetX() >= x && node.GetZ() >= z && node.GetX() < boundX && node.GetZ() < boundZ).Count != 0);
+        return (Floors[y - 1].floorBlocks.FindAll(node => node.GetX() >= x && node.GetZ() >= z && node.GetX() < boundX && node.GetZ() < boundZ).Count != 0);
     }
 
     /// <summary>
@@ -1783,7 +1783,7 @@ public class BuildingGeneration : MonoBehaviour
         int newFloorX = UnityEngine.Random.Range(deltaX, 10);
         int newFloorZ = UnityEngine.Random.Range(deltaZ, 10);
         NodeVector2 selected = ProccessedFrameStart(newFloorX, newFloorZ, safety.floor, frame);
-        floorBlocks[safety.floor].SetDimensions(selected.x, selected.z, newFloorX, newFloorZ);
+        Floors[safety.floor].SetDimensions(selected.x, selected.z, newFloorX, newFloorZ);
     }
 
     /// <summary>
@@ -1792,7 +1792,7 @@ public class BuildingGeneration : MonoBehaviour
     /// <param name="y">The Floor number.</param>
     private void ConfigureFloorGrid(int y)
     {
-        InitializeFloorGrid(floorBlocks[y]);
+        InitializeFloorGrid(Floors[y]);
         SetNeighbors(y);
     }
 
@@ -1878,7 +1878,7 @@ public class BuildingGeneration : MonoBehaviour
     private DemolishType DemolishFloor(SafetyGeneration safety)
     {
         DemolishRequest request = DemolishCall(safety.type);
-        floorBlocks[safety.floor].ClearNodesOfType(request.types);
+        Floors[safety.floor].ClearNodesOfType(request.types);
 
         FreeUnvaluedNodes(safety.floor, request.search);        // Removes all the unvalued nodes to keep for this regeneration from the lists on this floor
         ClearRoomsAndRoutes(safety.floor, request.search);      // Clears the rooms and routes on the given floor ready for another regeneration
@@ -1918,7 +1918,7 @@ public class BuildingGeneration : MonoBehaviour
         List<SafetyGeneration> demolitions = new List<SafetyGeneration>();
         for (int y = 0; y < absoluteY; y++)
         {
-            if (floorBlocks[y].isVisited && y != playerFloor)
+            if (Floors[y].isVisited && y != playerFloor)
             {
                 DemolishType demolition = GetDemolishType(y, playerFloor);
                 SafetyGeneration safety = new SafetyGeneration(y, demolition);

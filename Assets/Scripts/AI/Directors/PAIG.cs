@@ -36,9 +36,16 @@ public class PAIG : MonoBehaviour
         buildingGen = GameObject.Find("BuildingNode").GetComponent<BuildingGeneration>();
         zombieGen = buildingGen.GetComponent<ZombieManager>();
     }
-	
-	// Update is called once per frame
-	void Update ()
+
+
+
+    private BlockPiece closestNode = null;
+    private float playerDistance = 500f;
+    private bool lastAbove = true;
+    private float evaluatedMultiplier = 0.0f;
+
+    // Update is called once per frame
+    void Update ()
     {
         //if (Input.GetKeyDown(KeyCode.G))
         //{
@@ -52,10 +59,9 @@ public class PAIG : MonoBehaviour
         //}
         if (annieSpawned)
         {
-            if (AnnieObject.Movement.currentFloor != h_player.CurrentFloor)
-            {
-                
-            }
+            float ratio = h_player.transform.position.y / AnnieObject.transform.position.y;
+            AnnieObject.Audio.DirectorSetVolume(ratio);
+
         }
 
 
@@ -64,7 +70,7 @@ public class PAIG : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.M) && !annieSpawned)
             {
-                BlockPiece node = buildingGen.floorBlocks[1].routeBlocks[3];
+                BlockPiece node = buildingGen.Floors[1].routeBlocks[3];
                 AnnieObject.Activate(h_player.gameObject, node, buildingGen);
                 annieSpawned = true;
             }
@@ -72,7 +78,7 @@ public class PAIG : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.Minus))
             {
                 //Get Annie to traverse down a floor
-                List<BlockPiece> corridorNodesBelow = buildingGen.floorBlocks[AnnieObject.Movement.currentFloor - 1].routeBlocks.FindAll(n => !n.isStairNode);
+                List<BlockPiece> corridorNodesBelow = buildingGen.Floors[AnnieObject.Movement.currentFloor - 1].routeBlocks.FindAll(n => !n.isStairNode);
 
                 if (corridorNodesBelow.Count != 0)
                 {
@@ -88,7 +94,7 @@ public class PAIG : MonoBehaviour
             {
                 //Get annie to travese up a floor
                 //Get Annie to traverse down a floor
-                List<BlockPiece> corridorNodesAbove = buildingGen.floorBlocks[AnnieObject.Movement.currentFloor + 1].routeBlocks.FindAll(n => !n.isStairNode);
+                List<BlockPiece> corridorNodesAbove = buildingGen.Floors[AnnieObject.Movement.currentFloor + 1].routeBlocks.FindAll(n => !n.isStairNode);
 
                 if (corridorNodesAbove.Count != 0)
                 {
@@ -169,7 +175,7 @@ public class PAIG : MonoBehaviour
         }
         else
         {
-            List<BlockPiece> corridorNodes = buildingGen.floorBlocks[h_player.CurrentFloor].routeBlocks.FindAll(n => !n.isStairNode);
+            List<BlockPiece> corridorNodes = buildingGen.Floors[h_player.CurrentFloor].routeBlocks.FindAll(n => !n.isStairNode);
             if (corridorNodes.Count != 0)
             {
                 BlockPiece randomNode = corridorNodes[UnityEngine.Random.Range(0, corridorNodes.Count)];
@@ -210,9 +216,9 @@ public class PAIG : MonoBehaviour
 
     private void ConfigureStairWalls(int y, bool active)
     {
-        for (int s = 0; s < buildingGen.floorBlocks[y].stairBlocks.Count; s++)
+        for (int s = 0; s < buildingGen.Floors[y].stairBlocks.Count; s++)
         {
-            BlockPiece block = buildingGen.floorBlocks[y].stairBlocks[s];
+            BlockPiece block = buildingGen.Floors[y].stairBlocks[s];
             foreach (Transform child in block.transform)
             {
                 if (child.tag == m_stairTag)

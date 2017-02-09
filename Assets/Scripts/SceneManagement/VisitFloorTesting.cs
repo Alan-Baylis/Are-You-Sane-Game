@@ -69,10 +69,10 @@ public class VisitFloorTesting : MonoBehaviour
                 {
                     player.CurrentFloor = i;
 
-                    if (!building.floorBlocks[i].isVisited)
+                    if (!building.Floors[i].isVisited)
                     {
                         visitedFloors.Add(i);
-                        building.floorBlocks[i].isVisited = true;
+                        building.Floors[i].isVisited = true;
                     }
 
                     Debug.Log("Player is now on Floor " + i);  
@@ -93,14 +93,14 @@ public class VisitFloorTesting : MonoBehaviour
         {
             if (Input.GetKeyDown(keyCodes[i]))
             {
-                if (building.floorBlocks[i].isVisited)
+                if (building.Floors[i].isVisited)
                 {
                     Debug.Log("You have already visited this floor");
                 }
                 else
                 {
                     Debug.Log("Floor " + i + " has now been visited");
-                    building.floorBlocks[i].isVisited = true;
+                    building.Floors[i].isVisited = true;
                     visitedFloors.Add(i);
                 }
             }

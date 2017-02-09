@@ -29,23 +29,30 @@ public class LAAudio : LAComponent
 
     private AudioClip m_currentClip = new AudioClip();
 
+
+    public AnimationCurve m_SoundFloorRollOff = new AnimationCurve();
+
     private float m_audioTimer = 0.0f;
     private bool m_playLoopDelay;
     private float m_loopDelay = 0.0f;
 
-    
+    private float m_InitialVolumeFeetSource = 0.0f;
+    private float m_InitialVolumeVoiceSource = 0.0f;
 
     public bool isPlaying { get { return m_VoiceSource.isPlaying; } }
 
 	// Use this for initialization
 	public override void Start ()
     {
-
+        m_InitialVolumeFeetSource = m_FeetSource.volume;
+        m_InitialVolumeVoiceSource = m_VoiceSource.volume;
     }
 
-    public void DirectorSetVolume(bool sameFloorAsPlayer)
+    public void DirectorSetVolume(float ratio)
     {
-        //m_FeetSource.volume = (sameFloorAsPlayer) ? 0.
+        float evaluation = m_SoundFloorRollOff.Evaluate(ratio);
+        m_FeetSource.volume = evaluation;
+        m_VoiceSource.volume = evaluation * 1f;
     }
 
     public void PlayFootStepAudio()

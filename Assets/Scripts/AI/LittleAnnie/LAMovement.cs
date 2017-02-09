@@ -160,7 +160,7 @@ public class LAMovement : LAComponent
     public void SetPatrolBlocks(int y)
     {
         m_currentPatrolBlocks.Clear();
-        m_currentPatrolBlocks.AddRange(Annie.Building.floorBlocks[y].routeBlocks.FindAll(n => !n.isStairNode));
+        m_currentPatrolBlocks.AddRange(Annie.Building.Floors[y].routeBlocks.FindAll(n => !n.isStairNode));
     }
 
     /// <summary>
