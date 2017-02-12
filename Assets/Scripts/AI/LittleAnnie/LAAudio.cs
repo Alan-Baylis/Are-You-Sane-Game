@@ -27,10 +27,14 @@ public class LAAudio : LAComponent
     [SerializeField]
     private AudioSource m_FeetSource;
 
+    
+
     private AudioClip m_currentClip = new AudioClip();
 
 
     public AnimationCurve m_SoundFloorRollOff = new AnimationCurve();
+    public AnimationCurve m_SoundReverbEffectRollOff = new AnimationCurve();
+
 
     private float m_audioTimer = 0.0f;
     private bool m_playLoopDelay;
@@ -46,6 +50,11 @@ public class LAAudio : LAComponent
     {
         m_InitialVolumeFeetSource = m_FeetSource.volume;
         m_InitialVolumeVoiceSource = m_VoiceSource.volume;
+    }
+
+    public void DirectorSetEffectIntensity(float ratio)
+    {
+        
     }
 
     public void DirectorSetVolume(float ratio)

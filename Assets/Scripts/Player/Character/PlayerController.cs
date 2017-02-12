@@ -144,7 +144,7 @@ public class PlayerController : PlayerComponent
         // excluding sound at index 0
         int n = Random.Range(1, m_FootstepSounds.Length);
         Debug.Log(movementSettings.CurrentSpeedPercent());
-        m_AudioSource.volume = m_AudioCurveModifier.Evaluate(movementSettings.CurrentSpeedPercent());
+        m_AudioSource.volume = 0.1f;
         m_AudioSource.clip = m_FootstepSounds[n];
         m_AudioSource.PlayOneShot(m_AudioSource.clip);
         // move picked sound to index 0 so it's not picked next time
