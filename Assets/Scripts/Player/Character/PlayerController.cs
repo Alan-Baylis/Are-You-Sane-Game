@@ -19,6 +19,7 @@ public class PlayerController : PlayerComponent
     private Rigidbody m_RigidBody;
     private CapsuleCollider m_Capsule;
     private float m_YRotation;
+    private float m_InitalCapsuleHeight;
     private Vector3 m_GroundContactNormal;
     private bool m_Jump;
     private bool m_PreviouslyGrounded;
@@ -51,6 +52,7 @@ public class PlayerController : PlayerComponent
 
     private float m_AudioLevelMax;
 
+    private bool m_PreviouslyCrouching;
     private bool m_Crouching;
     private float m_StepCycle;
     private float m_NextStep;
@@ -74,6 +76,7 @@ public class PlayerController : PlayerComponent
         m_Camera = Camera.main;
         m_CameraOrigin = m_Camera.transform.localPosition;
         m_InitialCameraOrigin = m_CameraOrigin;
+        m_InitalCapsuleHeight = m_Capsule.height;
         m_FovKick.Setup(m_Camera);
         m_HeadBob.Setup(m_Camera, m_StepInterval);
         m_StepCycle = 0f;
@@ -106,7 +109,9 @@ public class PlayerController : PlayerComponent
 
     [System.Serializable]
     public class MovementSettings
-    {        
+    {
+        private const float WEIGHT_PERCENT_CONV = 50F;
+        private static readonly Vector2 MaxInputVelocity = new Vector2(0f, 1f);
         public float ForwardSpeed = 8.0f;       // Speed when walking forward
         public float BackwardSpeed = 4.0f;      // Speed when walking backwards
         public float StrafeSpeed = 4.0f;        // Speed when walking sideways
@@ -117,6 +122,7 @@ public class PlayerController : PlayerComponent
         public KeyCode CrouchKey = KeyCode.LeftControl;
         public float JumpForce = 30f;
         public AnimationCurve SlopeCurveModifier = new AnimationCurve(new Keyframe(-90.0f, 1.0f), new Keyframe(0.0f, 1.0f), new Keyframe(90.0f, 0.0f));
+
         [HideInInspector]
         public float CurrentTargetSpeed = 8f;
         private float m_MovementWeight = 0.0f;
@@ -130,6 +136,7 @@ public class PlayerController : PlayerComponent
         {
             if (input == Vector2.zero) return;
 
+            Debug.Log("Inputs X, Y: " + input.x + ", " + input.y);
             Debug.Log("Move Weight: " + m_MovementWeight);
             if (input.x > 0 || input.x < 0)
                 CurrentTargetSpeed = StrafeSpeed;
@@ -166,6 +173,15 @@ public class PlayerController : PlayerComponent
             }
 
             m_MovementWeight = m_MedianInputWeight * CurrentTargetSpeed * Time.deltaTime;
+
+            Debug.Log("Percent Movement: " + GetMovementWeightPercentage());
+        }
+
+
+        public float GetMovementWeightPercentage()
+        {
+            // Returns the weight of the movement in percentage to the maximum weight - use this to evaluate sound
+            return (m_MovementWeight / (MaxInputVelocity.sqrMagnitude * (ForwardSpeed * RunMultiplier))) * WEIGHT_PERCENT_CONV;
         }
 
         public float CurrentSpeedPercent()
@@ -181,7 +197,7 @@ public class PlayerController : PlayerComponent
         // excluding sound at index 0
         int n = Random.Range(1, m_FootstepSounds.Length);
         //Debug.Log(movementSettings.CurrentSpeedPercent());
-        m_AudioSource.volume = 0.5f;
+        m_AudioSource.volume = m_AudioCurveModifier.Evaluate(movementSettings.GetMovementWeightPercentage());
         m_AudioSource.clip = m_FootstepSounds[n];
         m_AudioSource.PlayOneShot(m_AudioSource.clip);
         // move picked sound to index 0 so it's not picked next time
@@ -211,8 +227,27 @@ public class PlayerController : PlayerComponent
             m_Jump = true;
         }
 
+        if (Input.GetKey(movementSettings.CrouchKey))
+        {
+            m_Crouching = true;
+            if (!m_PreviouslyCrouching)
+            {
+                // Reduce Capsule Height
+                //m_Capsule.height /= 2;
+            }
+        }
+        else
+        {
+            m_Crouching = false;
+            if (m_PreviouslyCrouching)
+            {
+                // Reset Capsule Height
+                //m_Capsule.height = m_InitalCapsuleHeight;
+            }
+        }
 
-        m_Crouching = Input.GetKey(movementSettings.CrouchKey);
+        m_PreviouslyCrouching = m_Crouching;
+
     }
 
     /// <summary>
@@ -225,16 +260,23 @@ public class PlayerController : PlayerComponent
 
         float v = 1f;
         if (m_Crouching)
-            v = Mathf.Max((v - movementSettings.CrouchMultiplier), 0);
+            v += (3 * movementSettings.CrouchMultiplier); // 2x for each foot
 
         return v;
     }
 
     private void ProgressStepCycle(Vector2 input)
     {
+        if (input == Vector2.zero)
+        {
+            m_StepCycle = m_NextStep + m_StepInterval;
+            return;
+        }
+
         if (m_RigidBody.velocity.sqrMagnitude > 0 && (input.x != 0 || input.y != 0))
             m_StepCycle += (m_RigidBody.velocity.magnitude + (movementSettings.CurrentTargetSpeed * GetTranslatedMovementLength())) * Time.fixedDeltaTime;
         
+        // If the step cycle is NOT great than the next step
         if (!(m_StepCycle > m_NextStep)) return;
         m_NextStep = m_StepCycle + m_StepInterval;
         PlayFootStepAudio();
