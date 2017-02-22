@@ -55,7 +55,7 @@ public class LAMovement : LAComponent
     LAMove m_moveState = LAMove.Idle;
 
     /// <summary>
-    /// This is a literal game getter and will only return the actual value of where annie is rather than one which might possibly be set - good for editing
+    /// Returns the floor number from the current node position of the AI
     /// </summary>
     public int currentFloor { get { return m_currentNodePosition.GetY(); } }
 

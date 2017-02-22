@@ -303,6 +303,8 @@ public class Pathfinder : MonoBehaviour
         }
     }
 
+
+    // For a clean path make the exclusive search true
     public bool GetPath(GameObject goalNode, Predicate<BlockPiece> exlusiveSearch)
     {
         if (goalNode == null)
@@ -404,8 +406,8 @@ public class Pathfinder : MonoBehaviour
         closedNodes.Add(lookingAt.gameObject);
         lookingAt.isSearchClosed = true;
         lookingAt.g = 0;
-        bool roomEntered = false;
-        Room lastEnteredRoom = null;
+        bool roomEntered = lookingAt.isRoom; // Are we already in a room?
+        Room lastEnteredRoom = (roomEntered) ? lookingAt.thisRoom : null;
 
         while (lookingAt.gameObject != goalNode && openedNodes.Count >= 0)
         {
@@ -428,7 +430,7 @@ public class Pathfinder : MonoBehaviour
                             {
                                 if (!neighbor.isRoom && !neighbor.isCorridorConnection)
                                 {
-                                    if (!neighbor.isCorridorConnection && neighbor.thisRoom != lastEnteredRoom) // Possible this can be only check in if statement or check room name here - careful of null reference for name check
+                                    if (neighbor.thisRoom != lastEnteredRoom) // Possible this can be only check in if statement or check room name here - careful of null reference for name check
                                         continue;
                                 }
                             }

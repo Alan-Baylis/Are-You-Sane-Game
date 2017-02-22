@@ -11,6 +11,7 @@ public class BlockPosition : MonoBehaviour
         {
             other.gameObject.GetComponent<PlayerHeuristics>().BlockPosition = thisNode;
             Debug.Log("Player Poisition: " + thisNode + " ------------------------------------------");
+            PAIG.AIDirector.MovementTriggerCallBack();
         }
         else if (other.gameObject.tag == "Zombie")
         {
@@ -19,6 +20,7 @@ public class BlockPosition : MonoBehaviour
         else if (other.gameObject.tag == "AnnieAI")
         {
             other.gameObject.GetComponent<LAObject>().Movement.SetNodePosition(thisNode);
+            PAIG.AIDirector.MovementTriggerCallBack();
         }
     }
 

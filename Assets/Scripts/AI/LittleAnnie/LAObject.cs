@@ -102,9 +102,11 @@ public class LAObject : MonoBehaviour // This Class has to be responsible for ma
             .Selector("Investigation")
             #region INVESTIGATION
 
-                .Selector("Player Interactions")
+                .Selector("Senses")
                 #region PLAYER INTERACTIONS
 
+
+                    // SIGHT
                     .Sequence("Sight Checks")
                     #region SIGHT
 
@@ -116,17 +118,39 @@ public class LAObject : MonoBehaviour // This Class has to be responsible for ma
                     #endregion
                     .End()
 
+
+                    // HEARING
                     .Sequence("Startled Checks")
                     #region STARTLED
 
                         .Condition("Startled?", t => m_sense.Startled)
+
+
+
+
                         .DoAction("Turn To Startle", t =>
                         {
                             return m_movement.TurnToFacePlayer();
                         })
 
+
+
+
+
                     #endregion
                     .End()
+
+                    // TOUCH
+                    
+
+
+
+                    // SMELL
+
+
+                    // TASTE
+
+
 
                 #endregion
                 .End()

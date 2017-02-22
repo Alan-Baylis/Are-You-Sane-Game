@@ -99,7 +99,7 @@ public class PlayerFlashLight : PlayerComponent
                     {
                         if (hit.transform.tag == GameTag.Annie)
                         {
-                            hit.transform.gameObject.GetComponent<LAObject>().Sense.Startle();
+                            hit.transform.gameObject.GetComponent<LAObject>().Sense.Startle(transform.position, StartleEvent.PlayerFlashLight);
                         }
                     }
                 }

@@ -9,6 +9,13 @@ public enum LAAwareness
     Hiding = 3
 }
 
+public enum StartleEvent
+{
+    PlayerFlashLight = 0,
+    Sound = 1,
+    ObjectInteraction = 2,
+}
+
 public class LASense : LAComponent
 {
     private const string PLAYER_TAG = "Player";
@@ -76,13 +83,17 @@ public class LASense : LAComponent
     }
 
 
-    public void Startle()
+    public void Startle(Vector3 pointOfInterest, StartleEvent eventType)
     {
-        if (!m_previouslyInSight && !m_startled)
+        if (eventType == StartleEvent.PlayerFlashLight)
         {
-            m_startled = true;
-            Annie.Audio.Scream(false, 0.0f);
+            if (!m_previouslyInSight && !m_startled)
+            {
+                m_startled = true;
+                Annie.Audio.Scream(false, 0.0f);
+            }
         }
+        
     }
 
     private void SetOnSightProperties()

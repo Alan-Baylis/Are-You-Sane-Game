@@ -3,6 +3,8 @@ using System.Collections;
 
 public class LAAudio : LAComponent
 {
+    // Potentially make serialized class with audio clip and volume scale for inspector
+
     [SerializeField]
     private AudioClip AUDIO_CRYING;
 
@@ -42,6 +44,11 @@ public class LAAudio : LAComponent
 
     private float m_InitialVolumeFeetSource = 0.0f;
     private float m_InitialVolumeVoiceSource = 0.0f;
+    private float m_VoiceVolumeScale = 1.0f;
+
+    private float m_DirectorFeetVolume = 0.0f;
+    private float m_DirectorVoiceVolume = 0.0f;
+
 
     public bool isPlaying { get { return m_VoiceSource.isPlaying; } }
 
@@ -57,11 +64,33 @@ public class LAAudio : LAComponent
         
     }
 
-    public void DirectorSetVolume(float ratio)
+    public void DirectorSetVolume(float closestF)
     {
-        float evaluation = m_SoundFloorRollOff.Evaluate(ratio);
-        m_FeetSource.volume = evaluation;
-        m_VoiceSource.volume = evaluation * 1f;
+        float evaluation = 0.0f;
+        if (closestF > 5)
+        {
+            m_DirectorFeetVolume = 0f;
+            m_DirectorVoiceVolume = 0f;
+        }
+        else
+        {
+            if (closestF > 0)
+            {
+                evaluation = 1 / (closestF * 2);
+            }
+            else
+            {
+                evaluation = 1f;
+            }
+
+            Debug.Log("Evaluation scale: " + evaluation);
+            m_DirectorFeetVolume = m_InitialVolumeFeetSource * evaluation;
+            m_DirectorVoiceVolume = (m_InitialVolumeVoiceSource * evaluation) * m_VoiceVolumeScale;
+        }
+
+        // Find a way to make this az smooth transition
+        m_FeetSource.volume = Mathf.Lerp(m_FeetSource.volume, m_DirectorFeetVolume, 10f);
+        m_VoiceSource.volume = Mathf.Lerp(m_VoiceSource.volume, m_DirectorFeetVolume, 10f);
     }
 
     public void PlayFootStepAudio()
@@ -69,7 +98,6 @@ public class LAAudio : LAComponent
         // pick & play a random footstep sound from the array,
         // excluding sound at index 0
         int n = Random.Range(1, m_FootstepSounds.Length);
-        //m_FeetSource.volume = 0.5f;
         m_FeetSource.clip = m_FootstepSounds[n];
         m_FeetSource.PlayOneShot(m_FeetSource.clip);
         // move picked sound to index 0 so it's not picked next time
@@ -90,11 +118,12 @@ public class LAAudio : LAComponent
         }
     }
 
-    private void AssignClip(AudioClip clip, bool loop, float delay)
+    private void AssignClip(AudioClip clip, bool loop, float delay, float volumeScale)
     {
         if (m_VoiceSource.clip == null || m_VoiceSource.clip.name != clip.name)
         {
             m_VoiceSource.Stop();
+            m_VoiceVolumeScale = volumeScale;
 
             if (loop)
             {
@@ -123,27 +152,27 @@ public class LAAudio : LAComponent
 
     public void Cry(bool loop, float delay)
     {
-        AssignClip(AUDIO_CRYING, loop, delay);
+        AssignClip(AUDIO_CRYING, loop, delay, 1f);
     }
 
     public void LaughGentle(bool loop, float delay)
     {
-        AssignClip(AUDIO_LAUGH_GENTLE, loop, delay);
+        AssignClip(AUDIO_LAUGH_GENTLE, loop, delay, 1f);
     }
 
     public void LaughJoy(bool loop, float delay)
     {
-        AssignClip(AUDIO_LAUGH_JOY, loop, delay);
+        AssignClip(AUDIO_LAUGH_JOY, loop, delay, 1f);
     }
 
     public void Sing(bool loop, float delay)
     {
-        AssignClip(AUDIO_SING, loop, delay);
+        AssignClip(AUDIO_SING, loop, delay, 0.3f);
     }
 
     public void Scream(bool loop, float delay)
     {
-        AssignClip(AUDIO_SCREAM, loop, delay);
+        AssignClip(AUDIO_SCREAM, loop, delay, 0.2f);
     }
 
     // Update is called once per frame

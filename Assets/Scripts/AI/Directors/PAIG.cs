@@ -6,6 +6,7 @@ using System.Collections.Generic;
 // Predisposition of AI Generation / AI Director
 public class PAIG : MonoBehaviour
 {
+    public static PAIG AIDirector;
 
     public int minSound = 10;
     public int maxSound = 50;
@@ -15,11 +16,12 @@ public class PAIG : MonoBehaviour
     private float soundTimer = 10f;
     private const string m_stairTag = "Stairs";
     private const string m_wallTag = "Wall";
-    private PlayerHeuristics h_player;
+    private PlayerHeuristics m_player;
     private BuildingGeneration buildingGen;
     private ZombieManager zombieGen;
     private AIResources resources;
     public SoundResources sounds;
+    private Pathfinder m_Pathfinder;
 
     private bool annieSpawned = false;
     public LAObject AnnieObject;
@@ -28,13 +30,19 @@ public class PAIG : MonoBehaviour
     private const float MAX_MOVE_FLOOR_TIME = 15f;
     private float m_moveFloorTimer = MAX_MOVE_FLOOR_TIME;
 
+
+    
+
     // Use this for initialization
     void Start ()
     {
         resources = GetComponent<AIResources>();
-        h_player = GameObject.FindGameObjectWithTag(GameTag.Player).GetComponent<PlayerHeuristics>();
+        m_player = GameObject.FindGameObjectWithTag(GameTag.Player).GetComponent<PlayerHeuristics>();
         buildingGen = GameObject.Find("BuildingNode").GetComponent<BuildingGeneration>();
         zombieGen = buildingGen.GetComponent<ZombieManager>();
+        m_Pathfinder = GetComponent<Pathfinder>();
+
+        AIDirector = this;
     }
 
 
@@ -43,6 +51,82 @@ public class PAIG : MonoBehaviour
     private float playerDistance = 500f;
     private bool lastAbove = true;
     private float evaluatedMultiplier = 0.0f;
+
+    GameObject m_ClosestDeltaFloorNode = null;
+    float m_ClosestDeltaNodeDistance = 0.0f;
+
+
+    public void MovementTriggerCallBack()
+    {
+        if (annieSpawned)
+        {
+            float deltaY = Mathf.Abs(m_player.CurrentFloor - AnnieObject.Movement.currentFloor);
+
+            // If the player is within one floor of the AI and there has been a change in position
+            if (deltaY <= 1)
+            {
+                if (m_player.CurrentFloor > AnnieObject.Movement.currentFloor)
+                {
+                    // Get the closest node to the connecting floor
+                    m_ClosestDeltaNodeDistance = 1000f;
+                    foreach (BlockPiece node in buildingGen.Floors[m_player.CurrentFloor].doorBlocks)
+                    {
+                        float d = Vector3.Distance(node.transform.position, m_player.BlockPosition.transform.position);
+                        if (d < m_ClosestDeltaNodeDistance)
+                        {
+                            m_ClosestDeltaNodeDistance = d;
+                            m_ClosestDeltaFloorNode = node.gameObject;
+                        }
+                    }
+
+                    m_Pathfinder.SetOnNode(m_player.BlockPosition);
+                    if (m_Pathfinder.GetPathFullTraversal(m_ClosestDeltaFloorNode, true))
+                    {
+                        float nearestF = m_ClosestDeltaFloorNode.GetComponent<BlockPiece>().f;
+                        AnnieObject.Audio.DirectorSetVolume(nearestF);
+                    }
+                    else
+                    {
+                        if (m_Pathfinder.GetPath(m_ClosestDeltaFloorNode, x => true))
+                        {
+                            float nearestF = m_ClosestDeltaFloorNode.GetComponent<BlockPiece>().f;
+                            AnnieObject.Audio.DirectorSetVolume(nearestF);
+                        }
+                    }
+                }
+                else if (m_player.CurrentFloor < AnnieObject.Movement.currentFloor)
+                {
+                    // Get the closest node to the connecting floor
+                    m_ClosestDeltaNodeDistance = 1000f;
+                    foreach (BlockPiece node in buildingGen.Floors[m_player.CurrentFloor].stairBlocks)
+                    {
+                        float d = Vector3.Distance(node.transform.position, m_player.BlockPosition.transform.position);
+                        if (d < m_ClosestDeltaNodeDistance)
+                        {
+                            m_ClosestDeltaNodeDistance = d;
+                            m_ClosestDeltaFloorNode = node.parent;
+                        }
+                    }
+
+                    m_Pathfinder.SetOnNode(m_player.BlockPosition);
+                    if (m_Pathfinder.GetPathFullTraversal(m_ClosestDeltaFloorNode, true))
+                    {
+                        float nearestF = m_ClosestDeltaFloorNode.GetComponent<BlockPiece>().f;
+                        AnnieObject.Audio.DirectorSetVolume(nearestF);
+                    }
+                    else
+                    {
+                        if (m_Pathfinder.GetPath(m_ClosestDeltaFloorNode, x => true))
+                        {
+                            float nearestF = m_ClosestDeltaFloorNode.GetComponent<BlockPiece>().f;
+                            AnnieObject.Audio.DirectorSetVolume(nearestF);
+                        }
+                    }
+                }
+            }
+        }
+       
+    }
 
     // Update is called once per frame
     void Update ()
@@ -59,8 +143,12 @@ public class PAIG : MonoBehaviour
         //}
         if (annieSpawned)
         {
-            float ratio = h_player.transform.position.y / AnnieObject.transform.position.y;
-            AnnieObject.Audio.DirectorSetVolume(ratio);
+            // Director Setting volume for player audio filtering
+
+            float deltaY = Mathf.Abs(m_player.transform.position.y - AnnieObject.transform.position.y);
+            
+
+            
 
         }
 
@@ -71,7 +159,7 @@ public class PAIG : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.M) && !annieSpawned)
             {
                 BlockPiece node = buildingGen.Floors[1].routeBlocks[3];
-                AnnieObject.Activate(h_player.gameObject, node, buildingGen);
+                AnnieObject.Activate(m_player.gameObject, node, buildingGen);
                 annieSpawned = true;
             }
 
@@ -168,14 +256,14 @@ public class PAIG : MonoBehaviour
 
     private void MoveAnnieToPlayerFloor()
     {
-        if (!h_player.BlockPosition.isStairNode && h_player.BlockPosition.isCorridor)
+        if (!m_player.BlockPosition.isStairNode && m_player.BlockPosition.isCorridor)
         {
             Debug.Log("Moving Annie To Player Node now");
-            AnnieObject.Movement.SelectMovementPath(h_player.BlockPosition); // This should be alright?
+            AnnieObject.Movement.SelectMovementPath(m_player.BlockPosition); // This should be alright?
         }
         else
         {
-            List<BlockPiece> corridorNodes = buildingGen.Floors[h_player.CurrentFloor].routeBlocks.FindAll(n => !n.isStairNode);
+            List<BlockPiece> corridorNodes = buildingGen.Floors[m_player.CurrentFloor].routeBlocks.FindAll(n => !n.isStairNode);
             if (corridorNodes.Count != 0)
             {
                 BlockPiece randomNode = corridorNodes[UnityEngine.Random.Range(0, corridorNodes.Count)];
@@ -193,7 +281,7 @@ public class PAIG : MonoBehaviour
         //BlockStairsBelowPlayer(h_player.CurrentFloor);
 
         // True means wall ARE active
-        if (h_player.CurrentFloor > buildingGen.Height / 2)
+        if (m_player.CurrentFloor > buildingGen.Height / 2)
         {
             Debug.Log("Blocked Below");
             BlockStairsBelowPlayer(true);
@@ -233,9 +321,9 @@ public class PAIG : MonoBehaviour
 
     private void BlockStairsBelowPlayer(bool active)
     {
-        if (h_player.CurrentFloor != 0)
+        if (m_player.CurrentFloor != 0)
         {
-            for (int y = 0; y < h_player.CurrentFloor; y++)
+            for (int y = 0; y < m_player.CurrentFloor; y++)
             {
                 if (active)
                 {
@@ -253,7 +341,7 @@ public class PAIG : MonoBehaviour
 
     private void BlockStairsAbovePlayer(bool active)
     {
-        for (int y = h_player.CurrentFloor; y < buildingGen.Height - 1; y++)
+        for (int y = m_player.CurrentFloor; y < buildingGen.Height - 1; y++)
         {
             if (active)
             {

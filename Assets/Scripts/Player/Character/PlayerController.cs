@@ -9,6 +9,8 @@ using System.Collections;
 [RequireComponent(typeof(CapsuleCollider))]
 public class PlayerController : PlayerComponent
 {
+    private const float CROUCH_DEADZONE = 0.03F;
+
     public Camera m_Camera;
     public MovementSettings movementSettings = new MovementSettings();
     public MouseLook mouseLook = new MouseLook();
@@ -23,7 +25,7 @@ public class PlayerController : PlayerComponent
     private bool m_Jumping;
     private bool m_IsGrounded;
 
-    [SerializeField] [Range(0f, 1f)]private float m_RunstepLenghten;
+    [SerializeField] [Range(0f, 1f)] private float m_RunstepLenghten;
 
 
     [SerializeField]
@@ -37,7 +39,8 @@ public class PlayerController : PlayerComponent
     [SerializeField]
     private LerpControlledBob m_JumpBob = new LerpControlledBob();
 
-    private Vector3 m_OriginalCameraPosition;
+    private Vector3 m_InitialCameraOrigin;
+    private Vector3 m_CameraOrigin;
 
     public AnimationCurve m_AudioCurveModifier;
 
@@ -48,6 +51,7 @@ public class PlayerController : PlayerComponent
 
     private float m_AudioLevelMax;
 
+    private bool m_Crouching;
     private float m_StepCycle;
     private float m_NextStep;
     private AudioSource m_AudioSource;
@@ -68,7 +72,8 @@ public class PlayerController : PlayerComponent
         m_RigidBody = GetComponent<Rigidbody>();
         m_Capsule = GetComponent<CapsuleCollider>();
         m_Camera = Camera.main;
-        m_OriginalCameraPosition = m_Camera.transform.localPosition;
+        m_CameraOrigin = m_Camera.transform.localPosition;
+        m_InitialCameraOrigin = m_CameraOrigin;
         m_FovKick.Setup(m_Camera);
         m_HeadBob.Setup(m_Camera, m_StepInterval);
         m_StepCycle = 0f;
@@ -102,24 +107,39 @@ public class PlayerController : PlayerComponent
     [System.Serializable]
     public class MovementSettings
     {        
-        public float ForwardSpeed = 8.0f;   // Speed when walking forward
-        public float BackwardSpeed = 4.0f;  // Speed when walking backwards
-        public float StrafeSpeed = 4.0f;    // Speed when walking sideways
-        public float RunMultiplier = 2.0f;  // Speed when sprinting
+        public float ForwardSpeed = 8.0f;       // Speed when walking forward
+        public float BackwardSpeed = 4.0f;      // Speed when walking backwards
+        public float StrafeSpeed = 4.0f;        // Speed when walking sideways
+        public float CrouchReactionSpeed = 2f;  // Speed to transition to crouching
+        public float CrouchMultiplier = 0.5f;   // Speed when crouching
+        public float RunMultiplier = 2.0f;      // Speed when sprinting
         public KeyCode RunKey = KeyCode.LeftShift;
+        public KeyCode CrouchKey = KeyCode.LeftControl;
         public float JumpForce = 30f;
         public AnimationCurve SlopeCurveModifier = new AnimationCurve(new Keyframe(-90.0f, 1.0f), new Keyframe(0.0f, 1.0f), new Keyframe(90.0f, 0.0f));
         [HideInInspector]
         public float CurrentTargetSpeed = 8f;
+        private float m_MovementWeight = 0.0f;
+        private float m_MedianInputWeight = 0.0f;
+        public Vector3 CrouchOffset;
 
         private bool m_Running;
+        public float MovementWeight { get { return m_MovementWeight; } }
         public bool Running { get { return m_Running; } }
-        public void UpdateDesiredTargetSpeed(Vector2 input)
+        public void UpdateDesiredTargetSpeed(Vector2 input, bool crouching)
         {
             if (input == Vector2.zero) return;
-            if (input.x > 0 || input.x < 0) { CurrentTargetSpeed = StrafeSpeed; }
-            if (input.y < 0) { CurrentTargetSpeed = BackwardSpeed; }
-            if (input.y > 0) { CurrentTargetSpeed = ForwardSpeed; }
+
+            Debug.Log("Move Weight: " + m_MovementWeight);
+            if (input.x > 0 || input.x < 0)
+                CurrentTargetSpeed = StrafeSpeed;
+
+            if (input.y < 0)
+                CurrentTargetSpeed = BackwardSpeed;
+
+            if (input.y > 0)
+                CurrentTargetSpeed = ForwardSpeed;
+
             if (Input.GetKey(RunKey) || Input.GetButton("Sprint"))
             {
                 CurrentTargetSpeed *= RunMultiplier;
@@ -127,8 +147,25 @@ public class PlayerController : PlayerComponent
             }
             else
             {
+                if (crouching) // TODO - other input button/key types for crouching here (xbox controller)
+                    CurrentTargetSpeed *= CrouchMultiplier;
+                
                 m_Running = false;
             }
+
+            // This mitigates the switch in movement to account for different movement patterns to translate to sound
+            if (input.x != 0 && input.y != 0)
+            {
+                // We do this so the input magnitude is no combined when moving in diagonal directions
+                m_MedianInputWeight = (Mathf.Abs(input.x) + Mathf.Abs(input.y)) / 2f;
+                m_MedianInputWeight *= m_MedianInputWeight;
+            }
+            else
+            {
+                m_MedianInputWeight = input.sqrMagnitude;
+            }
+
+            m_MovementWeight = m_MedianInputWeight * CurrentTargetSpeed * Time.deltaTime;
         }
 
         public float CurrentSpeedPercent()
@@ -143,8 +180,8 @@ public class PlayerController : PlayerComponent
         // pick & play a random footstep sound from the array,
         // excluding sound at index 0
         int n = Random.Range(1, m_FootstepSounds.Length);
-        Debug.Log(movementSettings.CurrentSpeedPercent());
-        m_AudioSource.volume = 0.1f;
+        //Debug.Log(movementSettings.CurrentSpeedPercent());
+        m_AudioSource.volume = 0.5f;
         m_AudioSource.clip = m_FootstepSounds[n];
         m_AudioSource.PlayOneShot(m_AudioSource.clip);
         // move picked sound to index 0 so it's not picked next time
@@ -173,12 +210,30 @@ public class PlayerController : PlayerComponent
             PlayJumpSound();
             m_Jump = true;
         }
+
+
+        m_Crouching = Input.GetKey(movementSettings.CrouchKey);
+    }
+
+    /// <summary>
+    /// Translates the forms of movement into the multipliers needed for calculations
+    /// </summary>
+    private float GetTranslatedMovementLength()
+    {
+        if (movementSettings.Running)
+            return m_RunstepLenghten;
+
+        float v = 1f;
+        if (m_Crouching)
+            v = Mathf.Max((v - movementSettings.CrouchMultiplier), 0);
+
+        return v;
     }
 
     private void ProgressStepCycle(Vector2 input)
     {
         if (m_RigidBody.velocity.sqrMagnitude > 0 && (input.x != 0 || input.y != 0))
-            m_StepCycle += (m_RigidBody.velocity.magnitude + (movementSettings.CurrentTargetSpeed * (!movementSettings.Running ? 1f : m_RunstepLenghten))) * Time.fixedDeltaTime;
+            m_StepCycle += (m_RigidBody.velocity.magnitude + (movementSettings.CurrentTargetSpeed * GetTranslatedMovementLength())) * Time.fixedDeltaTime;
         
         if (!(m_StepCycle > m_NextStep)) return;
         m_NextStep = m_StepCycle + m_StepInterval;
@@ -231,27 +286,32 @@ public class PlayerController : PlayerComponent
         }
 
         m_Jump = false;
+
         ProgressStepCycle(input);
         UpdateCameraPosition();
     }
 
     private void UpdateCameraPosition()
     {
-        Vector3 newCameraPosition;
-        if (!m_UseHeadBob) return;
-        if (m_RigidBody.velocity.magnitude > 0)
+        Vector3 newCameraPosition = m_Camera.transform.localPosition;
+        if (m_UseHeadBob)
         {
-            m_Camera.transform.localPosition = m_HeadBob.DoHeadBob(m_RigidBody.velocity.magnitude + (movementSettings.CurrentTargetSpeed * (!movementSettings.Running ? 1f : m_RunstepLenghten)));
+            if (m_RigidBody.velocity.magnitude > 0)
+                m_Camera.transform.localPosition = m_HeadBob.DoHeadBob(m_RigidBody.velocity.magnitude + (movementSettings.CurrentTargetSpeed * GetTranslatedMovementLength()));
+
             newCameraPosition = m_Camera.transform.localPosition;
-            newCameraPosition.y = m_Camera.transform.localPosition.y - m_JumpBob.Offset();
-        }
-        else
-        {
-            newCameraPosition = m_Camera.transform.localPosition;
-            newCameraPosition.y = m_OriginalCameraPosition.y - m_JumpBob.Offset();
+            newCameraPosition.y = m_CameraOrigin.y - m_JumpBob.Offset();
         }
 
         m_Camera.transform.localPosition = newCameraPosition;
+        newCameraPosition = m_InitialCameraOrigin;
+
+        if (m_Crouching)
+            newCameraPosition += movementSettings.CrouchOffset;
+
+        if (Vector3.Distance(m_CameraOrigin, newCameraPosition) > CROUCH_DEADZONE)
+            m_CameraOrigin = Vector3.Lerp(m_CameraOrigin, newCameraPosition, movementSettings.CrouchReactionSpeed * Time.fixedDeltaTime);
+
     }
 
     private float SlopeMultiplier()
@@ -260,13 +320,11 @@ public class PlayerController : PlayerComponent
         return movementSettings.SlopeCurveModifier.Evaluate(angle);
     }
 
-
     private void StickToGroundHelper()
     {
         RaycastHit hitInfo;
         if (Physics.SphereCast(transform.position, m_Capsule.radius * (1.0f - advancedSettings.shellOffset), Vector3.down, out hitInfo,
-                                ((m_Capsule.height / 2f) - m_Capsule.radius) +
-                                advancedSettings.stickToGroundHelperDistance, ~0, QueryTriggerInteraction.Ignore))
+                                ((m_Capsule.height / 2f) - m_Capsule.radius) + advancedSettings.stickToGroundHelperDistance, ~0, QueryTriggerInteraction.Ignore))
         {
             if (Mathf.Abs(Vector3.Angle(hitInfo.normal, Vector3.up)) < 85f)
                 m_RigidBody.velocity = Vector3.ProjectOnPlane(m_RigidBody.velocity, hitInfo.normal);
@@ -282,7 +340,7 @@ public class PlayerController : PlayerComponent
             y = CrossPlatformInputManager.GetAxis("Vertical")
         };
 
-        movementSettings.UpdateDesiredTargetSpeed(input);
+        movementSettings.UpdateDesiredTargetSpeed(input, m_Crouching);
         return input;
     }
 
