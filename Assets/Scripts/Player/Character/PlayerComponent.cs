@@ -8,15 +8,15 @@ interface PlayerConfig
 
 public abstract class PlayerComponent : MonoBehaviour, PlayerConfig
 {
-    public bool IsActivated { get { return m_activated; } }    
-    protected PlayerObject m_player;
-    protected bool m_activated;
+    public bool IsActivated { get { return m_Activated; } }    
+    protected PlayerObject m_Player;
+    protected bool m_Activated;
     public virtual void Start() { }
     public virtual void Update() { }
     public virtual void FixedUpdate() { }
     public void Configure(PlayerObject player)
     {
-        m_player = player;
-        m_activated = true;
+        m_Player = player;
+        m_Activated = true;
     }
 }

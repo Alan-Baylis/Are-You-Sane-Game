@@ -70,7 +70,7 @@ public class PlayerFlashLight : PlayerComponent
 
     public override void FixedUpdate()
     {
-        if (!m_player.IsActivated) return;
+        if (!m_Player.IsActivated) return;
         if (flashOn) { HitEnemies(); }
     }
 
@@ -82,7 +82,7 @@ public class PlayerFlashLight : PlayerComponent
             if (col.gameObject.tag == GameTag.Annie)
             {
                 LAObject annie = col.gameObject.GetComponent<LAObject>();
-                if (annie != null && (annie.Movement.currentFloor != m_player.Heuristics.CurrentFloor))
+                if (annie != null && (annie.Movement.currentFloor != m_Player.Heuristics.CurrentFloor))
                     continue;
 
                 Vector3 dir = col.gameObject.transform.position - transform.position;
@@ -119,7 +119,7 @@ public class PlayerFlashLight : PlayerComponent
 	// Update is called once per frame
 	public override void Update ()
     {
-        if (!m_player.IsActivated) return;
+        if (!m_Player.IsActivated) return;
 
 	    if (extensionTimer > 0)
         {

@@ -28,7 +28,7 @@ public class PlayerHeuristics : PlayerComponent
         if (m_insanity >= (int)GameData.Difficulty)
         {
             Debug.Log("Player Has Died From Insanity");
-            m_player.PlayerEnd(EndCondition.Insane);
+            m_Player.PlayerEnd(EndCondition.Insane);
         }
     }
 

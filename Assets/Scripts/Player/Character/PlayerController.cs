@@ -217,7 +217,7 @@ public class PlayerController : PlayerComponent
 
     public override void Update()
     {
-        if (!m_player.IsActivated) return;
+        if (!m_Player.IsActivated) return;
 
         RotateView();
         if (CrossPlatformInputManager.GetButtonDown("Jump") && !m_Jump)
@@ -286,7 +286,7 @@ public class PlayerController : PlayerComponent
 
     public override void FixedUpdate()
     {
-        if (!m_player.IsActivated) return;
+        if (!m_Player.IsActivated) return;
 
         GroundCheck();
         Vector2 input = GetInput();

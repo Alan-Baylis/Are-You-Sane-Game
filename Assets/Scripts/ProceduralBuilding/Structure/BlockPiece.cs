@@ -700,7 +700,7 @@ public class BlockPiece : MonoBehaviour
             {
                 m_nodeType = BlockType.UTurn;
                 if (!isMainEntNode && !isRoom)
-                    m_Building.potentialExits.Add(this);
+                    m_Building.EndCorridorNodes.Add(this);
             }
         }
         else if (AcceptedIndicies.Count == 2)

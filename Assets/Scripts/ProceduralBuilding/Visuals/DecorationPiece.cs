@@ -43,14 +43,9 @@ public class DecorationPiece : MonoBehaviour
     //public BlockType m_blockType;
 
     /// <summary>
-    /// This works the same way as the door index only that we can have multipl side which require edges to be connected on a piece
+    /// This works the same way as the door index only that we can have multiple sides which require edges to be connected on a piece
     /// </summary>
     public DecorateEdge[] EdgesRquiredOnOrdered;
-
-    //public bool edgeRequired;
-
-    
-    //public int[] EdgesRquiredOnOrdered;
 
 
     public bool doorConnection;

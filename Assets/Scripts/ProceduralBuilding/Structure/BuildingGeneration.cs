@@ -54,17 +54,16 @@ public class BuildingGeneration : MonoBehaviour
     private List<GameObject> m_FloodContainer     = new List<GameObject>();
     private List<GameObject> m_FloodConnections   = new List<GameObject>();
 
-    public List<BlockPiece> potentialExits;
+    public List<BlockPiece> EndCorridorNodes;
 
     public FloorLevel[] Floors;
-    public GameObject[] reworkedMeshes;
+
     public GameObject   exitModel;
     
     [Range(1, 3)]
     public int difficultyMultiplier = 1;
 
     private GameObject[][,] m_FloorObjects;
-    private GameObject[,,]  m_Blocks;
     private GameObject      m_EntranceBlock;
 
     private int m_AbsoluteX;
@@ -85,11 +84,13 @@ public class BuildingGeneration : MonoBehaviour
 
     public int Depth    { get { return m_AbsoluteZ; } }
 
-    public bool SameRowOrColumn(BlockPiece node1, BlockPiece node2)     { return (node1.GetX() == node2.GetX() || node1.GetZ() == node2.GetZ()); }
+    public bool SameRowOrColumn(int x1, int z1, int x2, int z2)         { return (x1 == x2 || x2 == z2); }
 
     public bool SameRowOrColumn(BlockPiece node, int x, int z)          { return (node.GetX() == x || node.GetZ() == z); }
 
-    public bool SameRowOrColumn(int x1, int z1, int x2, int z2)         { return (x1 == x2 || x2 == z2); }
+    public bool SameRowOrColumn(BlockPiece node1, BlockPiece node2)     { return (node1.GetX() == node2.GetX() || node1.GetZ() == node2.GetZ()); }
+
+
 
     /// <summary>
     /// Creates the values for the game's world space and scaling.
@@ -123,9 +124,8 @@ public class BuildingGeneration : MonoBehaviour
     /// </summary>
     public void InitializeParameters()
     {
-        potentialExits = new List<BlockPiece>();
+        EndCorridorNodes = new List<BlockPiece>();
         Floors = new FloorLevel[m_AbsoulteY];
-        m_Blocks = new GameObject[m_AbsoluteX, m_AbsoulteY, m_AbsoluteZ];
         m_FloorObjects = new GameObject[m_AbsoulteY][,];
     }
 
@@ -134,11 +134,11 @@ public class BuildingGeneration : MonoBehaviour
     /// </summary>
     private void CreateRandomExit()
     {
-        if (potentialExits.Count > 0)
+        if (EndCorridorNodes.Count > 0)
         {
-            int randomIndex = UnityEngine.Random.Range(0, potentialExits.Count);
-            potentialExits[randomIndex].CreateExit(exitModel, false, true);
-            Debug.Log("Potential Exit Count: " + potentialExits.Count);
+            int randomIndex = UnityEngine.Random.Range(0, EndCorridorNodes.Count);
+            EndCorridorNodes[randomIndex].CreateExit(exitModel, false, true);
+            Debug.Log("Potential Exit Count: " + EndCorridorNodes.Count);
         }
         else
         {
@@ -215,8 +215,6 @@ public class BuildingGeneration : MonoBehaviour
         thisBlock.transform.localPosition = new Vector3(((-0.5f + (m_IncrementX / 2.0f)) + ((float)x * m_IncrementX)), floorParent.transform.localPosition.y, ((-0.5f + (m_IncrementZ / 2.0f)) + ((float)z * m_IncrementZ)));
         thisBlock.transform.SetParent(floorParent.transform);
         m_FloorObjects[floorParent.FloorNumber][x, z] = thisBlock;
-        m_Blocks[x, floorParent.FloorNumber, z] = thisBlock;
-
         floorParent.floorBlocks.Add(thisBlock.GetComponent<BlockPiece>());
         //floorParent.floorNodes[x, z] = thisBlock.GetComponent<BlockPiece>();
 
@@ -451,7 +449,7 @@ public class BuildingGeneration : MonoBehaviour
         int chosenY = UnityEngine.Random.Range(0, m_AbsoulteY);
         int chosenX = UnityEngine.Random.Range(Floors[chosenY].StartX, Floors[chosenY].EndX);
         int chosenZ = UnityEngine.Random.Range(Floors[chosenY].StartZ, Floors[chosenY].EndZ);
-        return m_Blocks[chosenX, chosenY, chosenZ].GetComponent<BlockPiece>();
+        return m_FloorObjects[chosenY][chosenX, chosenZ].GetComponent<BlockPiece>();
     }
 
     /// <summary>
@@ -463,9 +461,9 @@ public class BuildingGeneration : MonoBehaviour
     /// <returns>Block in game space</returns>
     public GameObject GetBlock(int x, int y, int z)
     {
-        if (x < m_Blocks.GetLength(0) && y < m_Blocks.GetLength(1) && z < m_Blocks.GetLength(2) && x >= 0 && y >= 0 && z >= 0)
+        if ((x >= 0 && y >= 0 && z >= 0) && y < m_AbsoulteY && x < m_FloorObjects[y].GetLength(0) && z < m_FloorObjects[y].GetLength(1))
         {
-            return m_Blocks[x, y, z];
+            return m_FloorObjects[y][x, z];
         }
         else
         {
@@ -1010,10 +1008,8 @@ public class BuildingGeneration : MonoBehaviour
         int safetyCycle = 0;
         while (safetyCycle < 5)
         {
-            bool complete = true;
-            if (GetRegenerationType(safety.type) == RegenerationType.Full) // Can ? operator this boolean yes ~ This means PRIME or FULL - Demolish To Regeneration Conversion
-                complete = SafetyGenStairNodes(safety.floor);
-            
+            bool complete = (GetRegenerationType(safety.type) == RegenerationType.Full) ? SafetyGenStairNodes(safety.floor) : true;   
+                     
             if (complete)
             {
                 if (SafetyGenFixedNodes(safety.floor))
@@ -1197,7 +1193,7 @@ public class BuildingGeneration : MonoBehaviour
             for (int z = floor.StartZ; z < floor.EndZ; z++)
             {
                 // Null check here - should handle the reconstruct around on regen
-                if (m_Blocks[x, floor.FloorNumber, z] == null)                
+                if (m_FloorObjects[floor.FloorNumber][x, z] == null)                
                     CreateBlock(floor, x, z);
                 
                 // Need to reapply the edge and corner checks per regeneration - important
@@ -1599,14 +1595,13 @@ public class BuildingGeneration : MonoBehaviour
         while (nodesToRemove.Count != 0)
         {
             BlockPiece node = nodesToRemove[0];
-            m_Blocks[node.GetX(), y, node.GetZ()] = null;
             m_FloorObjects[y][node.GetX(), node.GetZ()] = null;
             Floors[y].floorBlocks.Remove(node);
             nodesToRemove.Remove(node);
 
             // Potential to remove all other node conditions here
-            if (potentialExits.Contains(node)) // This may already remove however it could leave null references in list        
-                potentialExits.Remove(node);
+            if (EndCorridorNodes.Contains(node)) // This may already remove however it could leave null references in list        
+                EndCorridorNodes.Remove(node);
             
             safetyCycle++;
             if (safetyCycle > 250)
@@ -1697,6 +1692,7 @@ public class BuildingGeneration : MonoBehaviour
     /// <returns>Has the node met the free requirement?</returns>
     private bool ConditionNewFrame(int x, int z, int boundX, int boundZ, int y)
     {
+        // TODO - Make checks that parameters are within the bounds of the absolute building dimensions
         // Check there is at least 1 overlap in blocks to assure a possible stair node can be created
         return (Floors[y - 1].floorBlocks.FindAll(node => node.GetX() >= x && node.GetZ() >= z && node.GetX() < boundX && node.GetZ() < boundZ).Count != 0);
     }
@@ -1704,13 +1700,13 @@ public class BuildingGeneration : MonoBehaviour
     /// <summary>
     /// Condition for non-FULL demoltion nodes within a restricted floor framework
     /// </summary>
-    /// <param name="frame">Current floor's framework.</param>
     /// <param name="x">X value of node.</param>
     /// <param name="z">Z value of node.</param>
     /// <param name="boundX">X Boundary of frame on iteration</param>
     /// <param name="boundZ">Z Boundary of frame on iteration</param>
+    /// <param name="frame">Current floor's framework.</param>
     /// <returns>Has the node met the framework requirement?</returns>
-    private bool ConditionExistingFrame(FloorRebuilder frame, int x, int z, int boundX, int boundZ)
+    private bool ConditionExistingFrame(int x, int z, int boundX, int boundZ, FloorRebuilder frame)
     {
         bool conditionX = boundX >= frame.Xmaximum && x <= frame.Xminimum;
         bool conditionZ = boundZ >= frame.Zmaximum && z <= frame.Zminimum;
@@ -1745,7 +1741,7 @@ public class BuildingGeneration : MonoBehaviour
                     }
                     else
                     {
-                        if (ConditionExistingFrame(frame, x, z, boundX, boundZ))
+                        if (ConditionExistingFrame(x, z, boundX, boundZ, frame))
                             nodes.Add(new NodeVector2(x, z));
                     }
                 }
