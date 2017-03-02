@@ -598,12 +598,12 @@ public class ZombieTracker : MonoBehaviour
         while (lookingAt.gameObject != goalNode && openedNodes.Count >= 0)
         {
             // Check neighbors for next spot in the path
-            for (int i = 0; i < lookingAt.neighbors.Length; i++)
+            for (int i = 0; i < lookingAt.Neighbours.Length; i++)
             {
                 BlockPiece neighbor = null;
-                if (lookingAt.neighbors[i] != null)
+                if (lookingAt.Neighbours[i] != null)
                 {
-                    neighbor = lookingAt.neighbors[i].GetComponent<BlockPiece>();
+                    neighbor = lookingAt.Neighbours[i].GetComponent<BlockPiece>();
 
                     if (neighbor.isWalkable && !neighbor.isSearchClosed && !neighbor.isStairNode && neighbor.isCorridor)
                     {
@@ -614,13 +614,13 @@ public class ZombieTracker : MonoBehaviour
                             ScoreNeighbor(lookingAt, neighbor, goalNode, addedG);
                             openedNodes.Add(neighbor.gameObject);
                             neighbor.isSearchOpened = true;
-                            neighbor.parent = lookingAt.gameObject;
+                            neighbor.ParentPath = lookingAt.gameObject;
                         }
                         else
                         {
                             if (lookingAt.g + addedG < neighbor.g)
                             {
-                                neighbor.parent = lookingAt.gameObject;
+                                neighbor.ParentPath = lookingAt.gameObject;
                                 ScoreNeighbor(lookingAt, neighbor, goalNode, addedG);
                             }
                         }
@@ -723,7 +723,7 @@ public class ZombieTracker : MonoBehaviour
         while (nodeObject != onNode)
         {
             // Change the object to it's object's parent
-            nodeObject = node.parent;
+            nodeObject = node.ParentPath;
 
             // Re-apply and re-take the node component
             node = nodeObject.GetComponent<BlockPiece>();

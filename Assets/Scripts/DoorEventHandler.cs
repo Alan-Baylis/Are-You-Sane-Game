@@ -96,7 +96,7 @@ public class DoorEventHandler : MonoBehaviour
                         doorObject = hit.collider.gameObject;
                         doorSound = doorObject.GetComponent<AudioSource>();
                         doorSelected = true;
-                        GetComponent<PlayerController>().doorGrabbed = doorSelected;
+                        GetComponent<PlayerController>().DoorGrabbed = doorSelected;
                     }
                 }
             }
@@ -106,7 +106,7 @@ public class DoorEventHandler : MonoBehaviour
             if (!Input.GetMouseButton(0) || (Input.GetAxis("Interact") > -0.2f && joystickTriggered))
             {
                 doorSelected = false;
-                GetComponent<PlayerController>().doorGrabbed = doorSelected;
+                GetComponent<PlayerController>().DoorGrabbed = doorSelected;
             }
             else
             {

@@ -37,7 +37,7 @@ public class Room
         this.nodes = nodes.ToArray();
         DetermineRoomType();
         InitialConfiguration(); // Must be done after we have a length aqquired
-        m_roomName = "Room (" + nodes[0].GetY() + ", " +  nodes[0].attachedFloor.AllRooms.Count + ")";
+        m_roomName = "Room (" + nodes[0].GetY() + ", " +  nodes[0].Floor.AllRooms.Count + ")";
     }
 
     public Room (List<GameObject> blocks)
@@ -51,7 +51,7 @@ public class Room
         }
 
         InitialConfiguration(); // Must be done after we have a length aqquired
-        m_roomName = "Room (" + nodes[0].GetY() + ", " + nodes[0].attachedFloor.AllRooms.Count + ")";
+        m_roomName = "Room (" + nodes[0].GetY() + ", " + nodes[0].Floor.AllRooms.Count + ")";
 
 
     }
@@ -109,7 +109,7 @@ public class Room
                     {
                         foreach(DecorationPiece decoration in decorationPieces)
                         {
-                            if (decoration.doorIndexOnOrdered == ((node.roomConnectionIndex + moduloAddition) % 4))
+                            if (decoration.doorIndexOnOrdered == ((node.RoomConnectionIndex + moduloAddition) % 4))
                             {
                                 chosenDoorDefault = decoration;
                                 break;
@@ -213,22 +213,22 @@ public class Room
     {
         foreach (BlockPiece node in nodes)
         {
-            node.roomBelonging = m_scene;
-            node.roomNeighbors = new BlockPiece[4];
-            node.thisRoom = this;
+            node.TypeRoom = m_scene;
+            node.RoomNeighbours = new BlockPiece[4];
+            node.Room = this;
             
-            for (int n = 0; n < node.neighbors.Length; n++)
+            for (int n = 0; n < node.Neighbours.Length; n++)
             {
-                if (node.neighbors[n] == null || !node.neighbors[n].GetComponent<BlockPiece>().isRoom) // Either elses of these conditions would imply the node DOES exist
+                if (node.Neighbours[n] == null || !node.Neighbours[n].GetComponent<BlockPiece>().isRoom) // Either elses of these conditions would imply the node DOES exist
                 {
                     // Check whether or not this node is a narrow corridor inside the Room (random shaped rooms)
                     node.isRoomEdge = true;
-                    node.roomEdgeIndicies.Add(n);
+                    node.RoomEdgeIndicies.Add(n);
 
                     int opp = BuildingGeneration.GetOppositeNeighborIndex(n);
                     if (!node.isRoomNarrow)
                     {
-                        if (node.neighbors[opp] == null || !node.neighbors[opp].GetComponent<BlockPiece>().isRoom)
+                        if (node.Neighbours[opp] == null || !node.Neighbours[opp].GetComponent<BlockPiece>().isRoom)
                         {
                             node.isRoomNarrow = true;
                         }
@@ -237,18 +237,18 @@ public class Room
                 else
                 {
                     // Set the official room neighbor - it will only be a room node here as it is checked for that above
-                    node.roomNeighbors[n] = node.neighbors[n].GetComponent<BlockPiece>();
+                    node.RoomNeighbours[n] = node.Neighbours[n].GetComponent<BlockPiece>();
                 }
             }
 
             // Check for the node being a room corner - could be done with the room is narrow check to apply overall logic of checking node properties at set location in code
-            if (node.roomEdgeIndicies.Count > 2)
+            if (node.RoomEdgeIndicies.Count > 2)
             {
                 node.isRoomEnd = true;
             }
-            else if (node.roomEdgeIndicies.Count == 2)
+            else if (node.RoomEdgeIndicies.Count == 2)
             {
-                int delta = Math.Abs(node.roomEdgeIndicies[0] - node.roomEdgeIndicies[1]);
+                int delta = Math.Abs(node.RoomEdgeIndicies[0] - node.RoomEdgeIndicies[1]);
                 if (delta == 1 || delta == 3)
                 {
                     node.isRoomCorner = true;

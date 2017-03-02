@@ -104,7 +104,7 @@ public class PAIG : MonoBehaviour
                         if (d < m_ClosestDeltaNodeDistance)
                         {
                             m_ClosestDeltaNodeDistance = d;
-                            m_ClosestDeltaFloorNode = node.parent;
+                            m_ClosestDeltaFloorNode = node.ParentPath;
                         }
                     }
 

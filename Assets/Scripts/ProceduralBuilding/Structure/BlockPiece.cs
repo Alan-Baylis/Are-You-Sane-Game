@@ -6,26 +6,27 @@ using DaTup;
 
 public class BlockPiece : MonoBehaviour
 {
-    private const string m_wallTag = "Wall";
-    private const string m_zombieTag = "Zombie";
+    private const string WALL_TAG = "Wall";
+    private const string ZOMBIE_TAG = "Zombie";
 
-    public Room thisRoom                    = null;
-    private BuildingGeneration thisBuilding = null;
-    private FloorLevel thisFloor            = null;
+    public Room Room                        = null;
+    private BuildingGeneration m_Building   = null;
+    private FloorLevel m_Floor              = null;
     private GameObject m_InstantiatedModel  = null;
     private LightBehaviour m_Light          = null;
 
-    public bool topLeft     = false;
-    public bool topRight    = false;
-    public bool bottomRight = false;
-    public bool bottomLeft  = false;
+    // Bools used for debugging
+    [SerializeField] private bool m_NTopLeft     = false;
+    [SerializeField] private bool m_NTopRight    = false;
+    [SerializeField] private bool m_NBottomRight = false;
+    [SerializeField] private bool m_NBottomLeft  = false;
 
-    private bool[] diagonalMatches;
-    public List<int> sameTypeDiagonals      = new List<int>();
-    public List<int> nonSameTypeDiagonals   = new List<int>();
-    public List<int> pillarNeighborIndicies = new List<int>();
+    private bool[] m_DiagonalMatches;
+    public List<int> SameRoomDiagonalIndicies       = new List<int>();
+    public List<int> DifferentRoomDiagonalIndicies  = new List<int>();
+    public List<int> PillarNeighboutIndicies        = new List<int>();
 
-    public RoomType roomBelonging = RoomType.NONE;
+    public RoomType TypeRoom = RoomType.NONE;
 
     public bool isMainEntNode           = false;
 
@@ -60,37 +61,39 @@ public class BlockPiece : MonoBehaviour
     public bool isRoomNarrow            = false;
     public bool isRoomConnection        = false;
     
-    public int roomConnectionIndex;
-    public List<GameObject> minimumConnections  = new List<GameObject>();
-    public List<GameObject> validParents        = new List<GameObject>();
+    public int RoomConnectionIndex;
+    public List<GameObject> MiniumumConnections  = new List<GameObject>();
+    public List<GameObject> ValidParents        = new List<GameObject>();
 
-    public List<int> roomEdgeIndicies   = new List<int>();
-    public List<int> wallEdgeIndicies   = new List<int>();
-    public List<int> acceptedIndicies   = new List<int>();
-    public List<int> stairIndicies      = new List<int>();
+    public List<int> RoomEdgeIndicies   = new List<int>();
+    public List<int> WallEdgeIndicies   = new List<int>();
+    public List<int> AcceptedIndicies   = new List<int>();
+    public List<int> StairIndicies      = new List<int>();
 
-    public int[] orderedAcceptedIndicies;
-    public int[,] neighborCoords        = new int[4, 2];
-    public int[,] diagonalNeigborCoords = new int[4, 2];
+    public int[] OrderedAcceptedIndicies;
+    public int[,] NeighbourCoords        = new int[4, 2];
+    public int[,] DiagonalNeighbourCoords = new int[4, 2];
 
     public float g;
     public float h;
     public float f;
 
+    // Only for Testing in Unity
     public bool testing = false;
 
-    public GameObject[] neighbors;
-    public BlockPiece[] roomNeighbors = new BlockPiece[4];
-    public GameObject[] diagonalNeighbors;
+    public GameObject[] Neighbours;
+    public BlockPiece[] RoomNeighbours = new BlockPiece[4];
+    public GameObject[] DiagonalNeighbours;
 
-    public GameObject parent;
-    public BlockPiece nextFloorParent;
-    public BlockPiece previousFloorParent;
+    public GameObject ParentPath;
+    public BlockPiece StairNextParent;
+    public BlockPiece StairPreviousParent;
 
-    private int xCoord;
-    private int yCoord;
-    private int zCoord;
-    private MeshRenderer meshType;
+    private int m_X;
+    private int m_Y;
+    private int m_Z;
+    private MeshRenderer m_Mesh;
+
     private Color unWalkableColor       = Color.blue;
     private Color OpenedColor           = Color.red;
     private Color ClosedColor           = Color.yellow;
@@ -99,17 +102,17 @@ public class BlockPiece : MonoBehaviour
     private Color CorridorEdgeColor     = Color.cyan;
     private Color RoomConnectionColor   = Color.magenta;
     private Color decoratedColor        = Color.white;
-    float colorSmooth = 5;
+    private float colorSmooth = 5;
 
-    public FloorLevel attachedFloor
+    public FloorLevel Floor
     {
-        get { return thisFloor; }
-        set { thisFloor = value; }
+        get { return m_Floor; }
+        set { m_Floor = value; }
     }
 
-    public BuildingGeneration attachedBuilding
+    public BuildingGeneration Building
     {
-        set { thisBuilding = value; }
+        set { m_Building = value; }
     }
 
     public LightBehaviour Light
@@ -121,78 +124,78 @@ public class BlockPiece : MonoBehaviour
 
     private void ResetPreNeighborProperties()
     {
-        topLeft = false;
-        topRight = false;
-        bottomLeft = false;
-        bottomRight = false;
-        pillarNeighborIndicies.Clear();
-        sameTypeDiagonals.Clear();
-        nonSameTypeDiagonals.Clear();
+        m_NTopLeft = false;
+        m_NTopRight = false;
+        m_NBottomLeft = false;
+        m_NBottomRight = false;
+        PillarNeighboutIndicies.Clear();
+        SameRoomDiagonalIndicies.Clear();
+        DifferentRoomDiagonalIndicies.Clear();
     }
 
     public void ClearAcceptedIndicies()
     {
-        for (int i = 0; i < this.acceptedIndicies.Count; i++)
+        for (int i = 0; i < this.AcceptedIndicies.Count; i++)
         {
-            if (this.neighbors[this.acceptedIndicies[i]] != null)
+            if (this.Neighbours[this.AcceptedIndicies[i]] != null)
             {
-                BlockPiece neighbor = this.neighbors[this.acceptedIndicies[i]].GetComponent<BlockPiece>();
-                if (neighbor.isWalkable && this.minimumConnections.Contains(neighbor.gameObject))
-                    this.minimumConnections.Remove(neighbor.gameObject);
+                BlockPiece neighbor = this.Neighbours[this.AcceptedIndicies[i]].GetComponent<BlockPiece>();
+                if (neighbor.isWalkable && this.MiniumumConnections.Contains(neighbor.gameObject))
+                    this.MiniumumConnections.Remove(neighbor.gameObject);
             }
         }
 
-        this.acceptedIndicies.Clear();
-        foreach (int index in this.stairIndicies)
-            this.acceptedIndicies.Add(index);
+        this.AcceptedIndicies.Clear();
+        foreach (int index in this.StairIndicies)
+            this.AcceptedIndicies.Add(index);
     }
 
     public void ConfigureAcceptedIndicies()
     {
         ResetPreNeighborProperties();
         if (isRoom)        
-            if (minimumConnections.Count > 0)            
-                minimumConnections.RemoveAll(block => !block.GetComponent<BlockPiece>().isWalkable);                    
+            if (MiniumumConnections.Count > 0)            
+                MiniumumConnections.RemoveAll(block => !block.GetComponent<BlockPiece>().isWalkable);                    
 
-        for (int m = 0; m < minimumConnections.Count; m++)
+        for (int m = 0; m < MiniumumConnections.Count; m++)
         {
-            for (int n = 0; n < neighbors.Length; n++)
+            for (int n = 0; n < Neighbours.Length; n++)
             {
-                if (neighbors[n] != null)
+                if (Neighbours[n] != null)
                 {
-                    if (minimumConnections[m] != null && neighbors[n] != null)
+                    if (MiniumumConnections[m] != null && Neighbours[n] != null)
                     {
-                        if (minimumConnections[m].gameObject == neighbors[n].gameObject)
+                        if (MiniumumConnections[m].gameObject == Neighbours[n].gameObject)
                         {
-                            if (!acceptedIndicies.Contains(n))
+                            if (!AcceptedIndicies.Contains(n))
                             {
                                 // Note here - if the added gameObject or node is NULL then the count will still be increased and will add in that index
                                 // If a stairNodes bounds on a floor's width and depth creating a null walkable above this will happen for the door node
                                 // Door node will have a minimum connection to a null gameObject - still increasing the count and therefore adding the index here
-                                acceptedIndicies.Add(n);
+                                AcceptedIndicies.Add(n);
                             }
                         }
                     }
                 }
                 else
                 {
-                    if (acceptedIndicies.Contains(n))                    
-                        acceptedIndicies.Remove(n);                    
+                    if (AcceptedIndicies.Contains(n))                    
+                        AcceptedIndicies.Remove(n);                    
                 }
             }
         }
 
         if (isDoorNode)        
-            foreach (int stairIndex in stairIndicies)            
-                if (!acceptedIndicies.Contains(stairIndex))                
-                    acceptedIndicies.Add(stairIndex);                
+            foreach (int stairIndex in StairIndicies)            
+                if (!AcceptedIndicies.Contains(stairIndex))                
+                    AcceptedIndicies.Add(stairIndex);                
                     
         // Order them in ascending order - this sorts the list itself. Unlike the linq orderby extension which returns an order enumberable of the list
-        acceptedIndicies.Sort((a, b) => a.CompareTo(b));
+        AcceptedIndicies.Sort((a, b) => a.CompareTo(b));
 
-        foreach (int index in acceptedIndicies)        
+        foreach (int index in AcceptedIndicies)        
             if (isUnindexableNeighbor(index))            
-                pillarNeighborIndicies.Add(index);
+                PillarNeighboutIndicies.Add(index);
                 
     }
 
@@ -237,17 +240,17 @@ public class BlockPiece : MonoBehaviour
     
     private bool isDeterminedDiagonalOfType(int index)
     {
-        if (index < diagonalNeighbors.Length)
+        if (index < DiagonalNeighbours.Length)
         {
-            if (diagonalNeighbors[index] != null)
+            if (DiagonalNeighbours[index] != null)
             {
                 if (isRoom)
                 {
-                    return diagonalNeighbors[index].GetComponent<BlockPiece>().isRoom;
+                    return DiagonalNeighbours[index].GetComponent<BlockPiece>().isRoom;
                 }
                 else
                 {
-                    return corridorNode(diagonalNeighbors[index].GetComponent<BlockPiece>());
+                    return corridorNode(DiagonalNeighbours[index].GetComponent<BlockPiece>());
                 }
             }
         }
@@ -257,11 +260,11 @@ public class BlockPiece : MonoBehaviour
 
     private bool isUnindexableNeighbor(int index)
     {
-        if (index < neighbors.Length)
+        if (index < Neighbours.Length)
         {
-            if (neighbors[index] != null)
+            if (Neighbours[index] != null)
             {
-                BlockPiece neighborNode = neighbors[index].GetComponent<BlockPiece>();
+                BlockPiece neighborNode = Neighbours[index].GetComponent<BlockPiece>();
                 if (!isRoom)
                 {
                     return (neighborNode.isRoomConnection || (neighborNode.isStairNode && isStairConnection) || !neighborNode.isWalkable);
@@ -293,17 +296,17 @@ public class BlockPiece : MonoBehaviour
 
     private bool NeighborMatrixMatchAny(int index)
     {
-        return (neighborCoords[index, 0] == diagonalNeigborCoords[index, 0] || neighborCoords[index, 1] == diagonalNeigborCoords[index, 1]);
+        return (NeighbourCoords[index, 0] == DiagonalNeighbourCoords[index, 0] || NeighbourCoords[index, 1] == DiagonalNeighbourCoords[index, 1]);
     }
 
     private bool NeighborMatrixMatchAny(int nIndex, int dIndex)
     {
-        return (neighborCoords[nIndex, 0] == diagonalNeigborCoords[dIndex, 0] || neighborCoords[nIndex, 1] == diagonalNeigborCoords[dIndex, 1]);
+        return (NeighbourCoords[nIndex, 0] == DiagonalNeighbourCoords[dIndex, 0] || NeighbourCoords[nIndex, 1] == DiagonalNeighbourCoords[dIndex, 1]);
     }
 
     private bool NeighborMatrixMatchExactly(int index)
     {
-        return (neighborCoords[index, 0] == diagonalNeigborCoords[index, 0] && neighborCoords[index, 1] == diagonalNeigborCoords[index, 1]);
+        return (NeighbourCoords[index, 0] == DiagonalNeighbourCoords[index, 0] && NeighbourCoords[index, 1] == DiagonalNeighbourCoords[index, 1]);
     }
 
     private float EntranceRotation(int index)
@@ -369,7 +372,8 @@ public class BlockPiece : MonoBehaviour
 
     private BlockType MeshCornerRoomConversion(int diagonalIndex)
     {
-        return (isRoom) ? MeshCornerType(isDiagonalNeighborRoom(diagonalIndex), isRoomConnection) : MeshCornerType((isDiagonalNeighborCorridor(diagonalIndex) && !isStairConnection && !isCorridorConnection), (isDoorNode && !isMainEntNode));
+        return (isRoom) ? MeshCornerType(isDiagonalNeighborRoom(diagonalIndex), isRoomConnection) :
+            MeshCornerType((isDiagonalNeighborCorridor(diagonalIndex) && !isStairConnection && !isCorridorConnection), (isDoorNode && !isMainEntNode));
     }
 
     private bool isDiagonalNeighborRoomConversion(int index)
@@ -389,9 +393,9 @@ public class BlockPiece : MonoBehaviour
 
     private BlockType TjuncSwitchType(Accepted3TypesOrdered types)
     {
-        for (int i = 0; i < acceptedIndicies.Count; i++)
+        for (int i = 0; i < AcceptedIndicies.Count; i++)
         {
-            if (pillarNeighborIndicies[0] == acceptedIndicies[i])
+            if (PillarNeighboutIndicies[0] == AcceptedIndicies[i])
             {
                 return types.typesOrdered[i];
             }
@@ -404,22 +408,22 @@ public class BlockPiece : MonoBehaviour
 
     private BlockType TjuncDiagonalType(int diagonalIndex, Accepted3TypesOrdered types)
     {
-        return (thisBuilding.SameRowOrColumn(diagonalNeighbors[diagonalIndex].GetComponent<BlockPiece>(), neighbors[pillarNeighborIndicies[0]].GetComponent<BlockPiece>())) ? BlockType.TjuncX2 : TjuncSwitchType(types);
+        return (m_Building.SameRowOrColumn(DiagonalNeighbours[diagonalIndex].GetComponent<BlockPiece>(), Neighbours[PillarNeighboutIndicies[0]].GetComponent<BlockPiece>())) ? BlockType.TjuncX2 : TjuncSwitchType(types);
     }
 
     private float PillarX2Accept4Rotation
     {
         get
         {
-            if (diagonalMatches[0] && diagonalMatches[1])
+            if (m_DiagonalMatches[0] && m_DiagonalMatches[1])
             {
                 return 180f;
             }
-            else if (diagonalMatches[1] && diagonalMatches[2])
+            else if (m_DiagonalMatches[1] && m_DiagonalMatches[2])
             {
                 return 90f;
             }
-            else if (diagonalMatches[2] && diagonalMatches[3])
+            else if (m_DiagonalMatches[2] && m_DiagonalMatches[3])
             {
                 return 0f;
             }
@@ -434,7 +438,7 @@ public class BlockPiece : MonoBehaviour
     {
         get
         {
-            return (diagonalMatches[0] && diagonalMatches[2]) ? 90f : 0f;
+            return (m_DiagonalMatches[0] && m_DiagonalMatches[2]) ? 90f : 0f;
         }
     }
 
@@ -442,7 +446,7 @@ public class BlockPiece : MonoBehaviour
     {
         get
         {
-            switch(pillarNeighborIndicies[0])
+            switch(PillarNeighboutIndicies[0])
             {
                 case 0:
                     return 0f;                    
@@ -460,10 +464,10 @@ public class BlockPiece : MonoBehaviour
 
     private bool PillarX2DiagonalMatch()
     {
-        foreach (int dINode in nonSameTypeDiagonals)
+        foreach (int dINode in DifferentRoomDiagonalIndicies)
         {
-            bool rc1 = NeighborMatrixMatchAny(pillarNeighborIndicies[0], dINode);
-            bool rc2 = NeighborMatrixMatchAny(pillarNeighborIndicies[1], dINode);
+            bool rc1 = NeighborMatrixMatchAny(PillarNeighboutIndicies[0], dINode);
+            bool rc2 = NeighborMatrixMatchAny(PillarNeighboutIndicies[1], dINode);
             if ((rc1 || rc2))
                 return true;
         }
@@ -473,10 +477,10 @@ public class BlockPiece : MonoBehaviour
 
     private bool PillarX2DiagonalSandwich()
     {
-        foreach (int dINode in nonSameTypeDiagonals)
+        foreach (int dINode in DifferentRoomDiagonalIndicies)
         {
-            bool rc1 = NeighborMatrixMatchAny(pillarNeighborIndicies[0], dINode);
-            bool rc2 = NeighborMatrixMatchAny(pillarNeighborIndicies[1], dINode);
+            bool rc1 = NeighborMatrixMatchAny(PillarNeighboutIndicies[0], dINode);
+            bool rc2 = NeighborMatrixMatchAny(PillarNeighboutIndicies[1], dINode);
             if ((rc1 && rc2))
                 return true;
         }
@@ -488,7 +492,7 @@ public class BlockPiece : MonoBehaviour
     {
         get
         {
-            switch (sameTypeDiagonals[0]) // This might be ONLY if corridor connection
+            switch (SameRoomDiagonalIndicies[0]) // This might be ONLY if corridor connection
             {
                 case 0:
                     return 270f;
@@ -508,7 +512,7 @@ public class BlockPiece : MonoBehaviour
     {
         get
         {
-            switch (pillarNeighborIndicies[0])
+            switch (PillarNeighboutIndicies[0])
             {
                 case 0:
                     return 90f; // Approved
@@ -528,15 +532,15 @@ public class BlockPiece : MonoBehaviour
     {
         get
         {
-            if (pillarNeighborIndicies.Contains(0) && pillarNeighborIndicies.Contains(1))
+            if (PillarNeighboutIndicies.Contains(0) && PillarNeighboutIndicies.Contains(1))
             {
                 return 0f;              
             }
-            else if (pillarNeighborIndicies.Contains(1) && pillarNeighborIndicies.Contains(2))
+            else if (PillarNeighboutIndicies.Contains(1) && PillarNeighboutIndicies.Contains(2))
             {
                 return 270f;                                                             
             }
-            else if (pillarNeighborIndicies.Contains(2) && pillarNeighborIndicies.Contains(3))
+            else if (PillarNeighboutIndicies.Contains(2) && PillarNeighboutIndicies.Contains(3))
             {
                 return 180f;              
             }
@@ -551,21 +555,21 @@ public class BlockPiece : MonoBehaviour
     {
         get
         {
-            if (sameTypeDiagonals.Contains(0) && sameTypeDiagonals.Contains(1))
+            if (SameRoomDiagonalIndicies.Contains(0) && SameRoomDiagonalIndicies.Contains(1))
             {
-                return (pillarNeighborIndicies[0] == 1) ? 270f : 180f; // Case 1 or 3
+                return (PillarNeighboutIndicies[0] == 1) ? 270f : 180f; // Case 1 or 3
             }
-            else if (sameTypeDiagonals.Contains(1) && sameTypeDiagonals.Contains(2))
+            else if (SameRoomDiagonalIndicies.Contains(1) && SameRoomDiagonalIndicies.Contains(2))
             {
-                return (pillarNeighborIndicies[0] == 0) ? 90f : 180f; // Case 0 or 2
+                return (PillarNeighboutIndicies[0] == 0) ? 90f : 180f; // Case 0 or 2
             }
-            else if (sameTypeDiagonals.Contains(2) && sameTypeDiagonals.Contains(3))
+            else if (SameRoomDiagonalIndicies.Contains(2) && SameRoomDiagonalIndicies.Contains(3))
             {
-                return (pillarNeighborIndicies[0] == 1) ? 0f : 90f; // Case 1 or 3
+                return (PillarNeighboutIndicies[0] == 1) ? 0f : 90f; // Case 1 or 3
             }
             else //if (sameTypeDiagonals.Contains(3) && sameTypeDiagonals.Contains(0))
             {
-                return (pillarNeighborIndicies[0] == 0) ? 0f : 270f; // Case 0 or 2
+                return (PillarNeighboutIndicies[0] == 0) ? 0f : 270f; // Case 0 or 2
             }
         }
     }
@@ -574,19 +578,19 @@ public class BlockPiece : MonoBehaviour
     {
         get
         {
-            switch (nonSameTypeDiagonals[0])
+            switch (DifferentRoomDiagonalIndicies[0])
             {
                 case 0:
-                    return (pillarNeighborIndicies[0] == 1) ? 0f : 180f;    // Case 1 or 2
+                    return (PillarNeighboutIndicies[0] == 1) ? 0f : 180f;    // Case 1 or 2
 
                 case 1:
-                    return (pillarNeighborIndicies[0] == 2) ? 270f : 90f;   // Case 2 or 3
+                    return (PillarNeighboutIndicies[0] == 2) ? 270f : 90f;   // Case 2 or 3
 
                 case 2:
-                    return (pillarNeighborIndicies[0] == 3) ? 180f : 0f;    // Case 3 or 0
+                    return (PillarNeighboutIndicies[0] == 3) ? 180f : 0f;    // Case 3 or 0
 
                 case 3:
-                    return (pillarNeighborIndicies[0] == 0) ? 90f : 270f;   // Case 0 or 1
+                    return (PillarNeighboutIndicies[0] == 0) ? 90f : 270f;   // Case 0 or 1
 
                 default:
                     return 0f;
@@ -603,7 +607,7 @@ public class BlockPiece : MonoBehaviour
     {
         get
         {
-            switch (nonSameTypeDiagonals[0]) // Set with 1 pillar
+            switch (DifferentRoomDiagonalIndicies[0]) // Set with 1 pillar
             {
                 case 0:
                     return 0f;
@@ -621,11 +625,11 @@ public class BlockPiece : MonoBehaviour
 
     private bool LinearToDiagonalOnlyAny()
     {
-        if (pillarNeighborIndicies.Count > 0)
+        if (PillarNeighboutIndicies.Count > 0)
         {
-            foreach (int pIRNode in pillarNeighborIndicies)
+            foreach (int pIRNode in PillarNeighboutIndicies)
             {
-                if (NeighborMatrixMatchAny(pIRNode, sameTypeDiagonals[0]))
+                if (NeighborMatrixMatchAny(pIRNode, SameRoomDiagonalIndicies[0]))
                 {
                     return true;
                 }
@@ -638,9 +642,9 @@ public class BlockPiece : MonoBehaviour
     private bool DiagonalToLinearOnlyCount(out int pillarCount)
     {
         pillarCount = 0;
-        foreach (int dINode in sameTypeDiagonals)
+        foreach (int dINode in SameRoomDiagonalIndicies)
         {
-            if (NeighborMatrixMatchAny(pillarNeighborIndicies[0], dINode))
+            if (NeighborMatrixMatchAny(PillarNeighboutIndicies[0], dINode))
             {
                 pillarCount++;
             }
@@ -662,19 +666,19 @@ public class BlockPiece : MonoBehaviour
 
     private void OrderAcceptedArray(int moduloAddition)
     {
-        for (int i = 0; i < orderedAcceptedIndicies.Length; i++)
+        for (int i = 0; i < OrderedAcceptedIndicies.Length; i++)
         {
-            orderedAcceptedIndicies[i] = (i + moduloAddition % 4);
+            OrderedAcceptedIndicies[i] = (i + moduloAddition % 4);
         }
     }
 
-    private void OrderAcceptedCopy()
+    private void SortOrideredAcceptedAsCopy()
     {
-        if (orderedAcceptedIndicies.Length == acceptedIndicies.Count)
+        if (OrderedAcceptedIndicies.Length == AcceptedIndicies.Count)
         {
-            for (int i = 0; i < orderedAcceptedIndicies.Length; i++)
+            for (int i = 0; i < OrderedAcceptedIndicies.Length; i++)
             {
-                orderedAcceptedIndicies[i] = acceptedIndicies[i];
+                OrderedAcceptedIndicies[i] = AcceptedIndicies[i];
             }
         }
     }
@@ -682,12 +686,12 @@ public class BlockPiece : MonoBehaviour
 
     public void ConfigureNodeOutlay()
     {
-        orderedAcceptedIndicies = new int[acceptedIndicies.Count];
+        OrderedAcceptedIndicies = new int[AcceptedIndicies.Count];
 
-        if (acceptedIndicies.Count == 1)
+        if (AcceptedIndicies.Count == 1)
         {
-            orderedAcceptedIndicies[0] = acceptedIndicies[0];
-            m_eulerMeshAngle = MeshAngleCount1(acceptedIndicies[0]);
+            OrderedAcceptedIndicies[0] = AcceptedIndicies[0];
+            m_eulerMeshAngle = MeshAngleCount1(AcceptedIndicies[0]);
             if (isStairNode)
             {
                 m_nodeType = BlockType.Stairs;
@@ -696,88 +700,88 @@ public class BlockPiece : MonoBehaviour
             {
                 m_nodeType = BlockType.UTurn;
                 if (!isMainEntNode && !isRoom)
-                    thisBuilding.potentialExits.Add(this);
+                    m_Building.potentialExits.Add(this);
             }
         }
-        else if (acceptedIndicies.Count == 2)
+        else if (AcceptedIndicies.Count == 2)
         {
             // 0 = 1, 2 (90)    - 2
             // 1 = 0, 1 (180)   - 1
             // 2 = 3, 0 (270)   - 0
             // 3 = 2, 3 (360)   - 3
 
-            if (acceptedIndicies.Contains(0) && acceptedIndicies.Contains(1)) // Top-Right                  // CORNERS ----------------------------------------
+            if (AcceptedIndicies.Contains(0) && AcceptedIndicies.Contains(1)) // Top-Right                  // CORNERS ----------------------------------------
             {
                 OrderAcceptedArray(0);
                 m_eulerMeshAngle = 180f;
                 m_nodeType = MeshCornerRoomConversion(1);
             }
-            else if (acceptedIndicies.Contains(1) && acceptedIndicies.Contains(2)) // Down-Right
+            else if (AcceptedIndicies.Contains(1) && AcceptedIndicies.Contains(2)) // Down-Right
             {
                 OrderAcceptedArray(1);
                 m_eulerMeshAngle = 90f;
                 m_nodeType = MeshCornerRoomConversion(2);
             }
-            else if (acceptedIndicies.Contains(2) && acceptedIndicies.Contains(3)) // Down-Left
+            else if (AcceptedIndicies.Contains(2) && AcceptedIndicies.Contains(3)) // Down-Left
             {
                 OrderAcceptedArray(2);
                 m_eulerMeshAngle = 360f;
                 m_nodeType = MeshCornerRoomConversion(3);
             }
-            else if (acceptedIndicies.Contains(3) && acceptedIndicies.Contains(0)) // Top-Left
+            else if (AcceptedIndicies.Contains(3) && AcceptedIndicies.Contains(0)) // Top-Left
             {
                 OrderAcceptedArray(3);
                 m_eulerMeshAngle = 270f;
                 m_nodeType = MeshCornerRoomConversion(0);
             }
-            else if (acceptedIndicies.Contains(0) && acceptedIndicies.Contains(2)) // Top-Down              // STRIAGHTS --------------------------------------
+            else if (AcceptedIndicies.Contains(0) && AcceptedIndicies.Contains(2)) // Top-Down              // STRIAGHTS --------------------------------------
             {
-                OrderAcceptedCopy();
+                SortOrideredAcceptedAsCopy();
                 m_nodeType = BlockType.OneWay;
                 m_eulerMeshAngle = 0f;
             }
-            else if (acceptedIndicies.Contains(1) && acceptedIndicies.Contains(3)) // Left-Right
+            else if (AcceptedIndicies.Contains(1) && AcceptedIndicies.Contains(3)) // Left-Right
             {
-                OrderAcceptedCopy();
+                SortOrideredAcceptedAsCopy();
                 m_nodeType = BlockType.OneWay;
                 m_eulerMeshAngle = 90f;
             }
         }
-        else if (acceptedIndicies.Count == 3)
+        else if (AcceptedIndicies.Count == 3)
         {
             // IS CORRIDOR CONNECTIONS IMPLIES +1 TO ANY PILLARS ON BLOCK PIECES SET
-            if (acceptedIndicies.Contains(0) && acceptedIndicies.Contains(1) && acceptedIndicies.Contains(2)) // Top-Right-Down
+            if (AcceptedIndicies.Contains(0) && AcceptedIndicies.Contains(1) && AcceptedIndicies.Contains(2)) // Top-Right-Down
             {
                 // i +0 % 4
 
                 OrderAcceptedArray(0);
                 #region INDEX { 0 , 1 , 2 }
-                topRight = isDiagonalNeighborRoomConversion(1);
-                bottomRight = isDiagonalNeighborRoomConversion(2);
+                m_NTopRight = isDiagonalNeighborRoomConversion(1);
+                m_NBottomRight = isDiagonalNeighborRoomConversion(2);
                 m_eulerMeshAngle = 180f;
                 Accepted3TypesOrdered types = new Accepted3TypesOrdered(BlockType.TjuncX1R, BlockType.TjuncX2, BlockType.TjuncX1L);
                 // 0 = R
                 // 1 = B
                 // 2 = L
 
-                if (pillarNeighborIndicies.Count >= 2)
+                if (PillarNeighboutIndicies.Count >= 2)
                 {
                     m_nodeType = BlockType.TjuncX2;
                 }
                 else
                 {
-                    if (topRight && bottomRight)
+                    if (m_NTopRight && m_NBottomRight)
                     {
-                        m_nodeType = (pillarNeighborIndicies.Count == 1) ? TjuncSwitchType(types) : BlockType.TjuncX0;
+                        m_nodeType = (PillarNeighboutIndicies.Count == 1) ? TjuncSwitchType(types) : BlockType.TjuncX0;
                     }
-                    else if (topRight)
+                    else if (m_NTopRight)
                     {
-                        m_nodeType = (pillarNeighborIndicies.Count == 1) ? TjuncDiagonalType(1, types) : BlockType.TjuncX1L;
+                        m_nodeType = (PillarNeighboutIndicies.Count == 1) ? TjuncDiagonalType(1, types) : BlockType.TjuncX1L;
                     }
-                    else if (bottomRight)
+                    else if (m_NBottomRight)
                     {
 
-                        m_nodeType = (pillarNeighborIndicies.Count == 1) ? TjuncDiagonalType(2, types) : BlockType.TjuncX1R;
+                        m_nodeType = (PillarNeighboutIndicies.Count == 1) ? TjuncDiagonalType(2, types) : BlockType.TjuncX1R;
                     }
                     else
                     {
@@ -788,7 +792,7 @@ public class BlockPiece : MonoBehaviour
 
                 #endregion
             }
-            else if (acceptedIndicies.Contains(1) && acceptedIndicies.Contains(2) && acceptedIndicies.Contains(3)) // Right-Down-Left
+            else if (AcceptedIndicies.Contains(1) && AcceptedIndicies.Contains(2) && AcceptedIndicies.Contains(3)) // Right-Down-Left
             {
                 OrderAcceptedArray(1);
                 // i +1 % 4
@@ -798,28 +802,28 @@ public class BlockPiece : MonoBehaviour
                 // 3 = L
 
                 #region INDEX { 1 , 2 , 3 }
-                bottomRight = isDiagonalNeighborRoomConversion(2);
-                bottomLeft = isDiagonalNeighborRoomConversion(3);
+                m_NBottomRight = isDiagonalNeighborRoomConversion(2);
+                m_NBottomLeft = isDiagonalNeighborRoomConversion(3);
                 m_eulerMeshAngle = 90f;
                 Accepted3TypesOrdered types = new Accepted3TypesOrdered(BlockType.TjuncX1R, BlockType.TjuncX2, BlockType.TjuncX1L);
 
-                if (pillarNeighborIndicies.Count >= 2)
+                if (PillarNeighboutIndicies.Count >= 2)
                 {
                     m_nodeType = BlockType.TjuncX2;
                 }
                 else
                 {
-                    if (bottomRight && bottomLeft)
+                    if (m_NBottomRight && m_NBottomLeft)
                     {
-                        m_nodeType = (pillarNeighborIndicies.Count == 1) ? TjuncSwitchType(types) : BlockType.TjuncX0;
+                        m_nodeType = (PillarNeighboutIndicies.Count == 1) ? TjuncSwitchType(types) : BlockType.TjuncX0;
                     }
-                    else if (bottomRight)
+                    else if (m_NBottomRight)
                     {
-                        m_nodeType = (pillarNeighborIndicies.Count == 1) ? TjuncDiagonalType(2, types) : BlockType.TjuncX1L;
+                        m_nodeType = (PillarNeighboutIndicies.Count == 1) ? TjuncDiagonalType(2, types) : BlockType.TjuncX1L;
                     }
-                    else if (bottomLeft)
+                    else if (m_NBottomLeft)
                     {
-                        m_nodeType = (pillarNeighborIndicies.Count == 1) ? TjuncDiagonalType(3, types) : BlockType.TjuncX1R;
+                        m_nodeType = (PillarNeighboutIndicies.Count == 1) ? TjuncDiagonalType(3, types) : BlockType.TjuncX1R;
                     }
                     else
                     {
@@ -829,7 +833,7 @@ public class BlockPiece : MonoBehaviour
 
                 #endregion
             }
-            else if (acceptedIndicies.Contains(2) && acceptedIndicies.Contains(3) && acceptedIndicies.Contains(0)) // Down-Left-Top
+            else if (AcceptedIndicies.Contains(2) && AcceptedIndicies.Contains(3) && AcceptedIndicies.Contains(0)) // Down-Left-Top
             {
                 // i +2 % 4
 
@@ -839,29 +843,29 @@ public class BlockPiece : MonoBehaviour
                 OrderAcceptedArray(2);
 
                 #region INDEX { 2 , 3 , 0 }
-                topLeft = isDiagonalNeighborRoomConversion(0);
-                bottomLeft = isDiagonalNeighborRoomConversion(3);
+                m_NTopLeft = isDiagonalNeighborRoomConversion(0);
+                m_NBottomLeft = isDiagonalNeighborRoomConversion(3);
                 m_eulerMeshAngle = 0f; // 360f
                 Accepted3TypesOrdered types = new Accepted3TypesOrdered(BlockType.TjuncX1L, BlockType.TjuncX1R, BlockType.TjuncX2);
 
 
-                if (pillarNeighborIndicies.Count >= 2)
+                if (PillarNeighboutIndicies.Count >= 2)
                 {
                     m_nodeType = BlockType.TjuncX2;
                 }
                 else
                 {
-                    if (topLeft && bottomLeft)
+                    if (m_NTopLeft && m_NBottomLeft)
                     {
-                        m_nodeType = (pillarNeighborIndicies.Count == 1) ? TjuncSwitchType(types) : BlockType.TjuncX0;
+                        m_nodeType = (PillarNeighboutIndicies.Count == 1) ? TjuncSwitchType(types) : BlockType.TjuncX0;
                     }
-                    else if (topLeft)
+                    else if (m_NTopLeft)
                     {
-                        m_nodeType = (pillarNeighborIndicies.Count == 1) ? TjuncDiagonalType(0, types) : BlockType.TjuncX1R;
+                        m_nodeType = (PillarNeighboutIndicies.Count == 1) ? TjuncDiagonalType(0, types) : BlockType.TjuncX1R;
                     }
-                    else if (bottomLeft)
+                    else if (m_NBottomLeft)
                     {
-                        m_nodeType = (pillarNeighborIndicies.Count == 1) ? TjuncDiagonalType(3, types) : BlockType.TjuncX1L;                        
+                        m_nodeType = (PillarNeighboutIndicies.Count == 1) ? TjuncDiagonalType(3, types) : BlockType.TjuncX1L;                        
                     }
                     else
                     {
@@ -871,7 +875,7 @@ public class BlockPiece : MonoBehaviour
 
                 #endregion
             }
-            else if (acceptedIndicies.Contains(3) && acceptedIndicies.Contains(0) && acceptedIndicies.Contains(1)) // Left-Top-Right
+            else if (AcceptedIndicies.Contains(3) && AcceptedIndicies.Contains(0) && AcceptedIndicies.Contains(1)) // Left-Top-Right
             {
                 // i +3 % 4
 
@@ -881,28 +885,28 @@ public class BlockPiece : MonoBehaviour
                 OrderAcceptedArray(3);
 
                 #region INDEX { 3 , 0 , 1 }
-                topLeft = isDiagonalNeighborRoomConversion(0);
-                topRight = isDiagonalNeighborRoomConversion(1);
+                m_NTopLeft = isDiagonalNeighborRoomConversion(0);
+                m_NTopRight = isDiagonalNeighborRoomConversion(1);
                 m_eulerMeshAngle = 270f;
                 Accepted3TypesOrdered types = new Accepted3TypesOrdered(BlockType.TjuncX2, BlockType.TjuncX1L, BlockType.TjuncX1R);
 
-                if (pillarNeighborIndicies.Count >= 2)
+                if (PillarNeighboutIndicies.Count >= 2)
                 {
                     m_nodeType = BlockType.TjuncX2;
                 }
                 else
                 {
-                    if (topLeft && topRight)
+                    if (m_NTopLeft && m_NTopRight)
                     {
-                        m_nodeType = (pillarNeighborIndicies.Count == 1) ? TjuncSwitchType(types) : BlockType.TjuncX0;                        
+                        m_nodeType = (PillarNeighboutIndicies.Count == 1) ? TjuncSwitchType(types) : BlockType.TjuncX0;                        
                     }
-                    else if (topLeft)
+                    else if (m_NTopLeft)
                     {
-                        m_nodeType = (pillarNeighborIndicies.Count == 1) ? TjuncDiagonalType(0, types) : BlockType.TjuncX1L;
+                        m_nodeType = (PillarNeighboutIndicies.Count == 1) ? TjuncDiagonalType(0, types) : BlockType.TjuncX1L;
                     }
-                    else if (topRight)
+                    else if (m_NTopRight)
                     {
-                        m_nodeType = (pillarNeighborIndicies.Count == 1) ? TjuncDiagonalType(1, types) : BlockType.TjuncX1R;
+                        m_nodeType = (PillarNeighboutIndicies.Count == 1) ? TjuncDiagonalType(1, types) : BlockType.TjuncX1R;
                     }
                     else
                     {
@@ -912,9 +916,9 @@ public class BlockPiece : MonoBehaviour
                 #endregion
             }
         }
-        else if (acceptedIndicies.Count == 4)
+        else if (AcceptedIndicies.Count == 4)
         {
-            if (acceptedIndicies.Contains(0) && acceptedIndicies.Contains(1) && acceptedIndicies.Contains(2) && acceptedIndicies.Contains(3)) // All Directions
+            if (AcceptedIndicies.Contains(0) && AcceptedIndicies.Contains(1) && AcceptedIndicies.Contains(2) && AcceptedIndicies.Contains(3)) // All Directions
             {
                 OrderAcceptedArray(0);
                 // Check top left and top right
@@ -924,34 +928,34 @@ public class BlockPiece : MonoBehaviour
                 //    [*] v [*]
                 //        2
 
-                topLeft = isDiagonalNeighborRoomConversion(0);
-                topRight = isDiagonalNeighborRoomConversion(1);
-                bottomRight = isDiagonalNeighborRoomConversion(2);
-                bottomLeft = isDiagonalNeighborRoomConversion(3);
+                m_NTopLeft = isDiagonalNeighborRoomConversion(0);
+                m_NTopRight = isDiagonalNeighborRoomConversion(1);
+                m_NBottomRight = isDiagonalNeighborRoomConversion(2);
+                m_NBottomLeft = isDiagonalNeighborRoomConversion(3);
 
-                diagonalMatches = new bool[diagonalNeighbors.Length];
+                m_DiagonalMatches = new bool[DiagonalNeighbours.Length];
 
-                for (int i = 0; i < diagonalNeighbors.Length; i++)
+                for (int i = 0; i < DiagonalNeighbours.Length; i++)
                 {
-                    diagonalMatches[i] = isDiagonalNeighborRoomConversion(i);
-                    if (diagonalMatches[i])
+                    m_DiagonalMatches[i] = isDiagonalNeighborRoomConversion(i);
+                    if (m_DiagonalMatches[i])
                     {
-                        sameTypeDiagonals.Add(i);
+                        SameRoomDiagonalIndicies.Add(i);
                     }
                     else
                     {
-                        nonSameTypeDiagonals.Add(i);
+                        DifferentRoomDiagonalIndicies.Add(i);
                     }
                 }
 
-                if (sameTypeDiagonals.Count == 4) // Set piece with 0 pillars --------------------------------------------------------------------------------------------------------------
+                if (SameRoomDiagonalIndicies.Count == 4) // Set piece with 0 pillars --------------------------------------------------------------------------------------------------------------
                 {
-                    if (pillarNeighborIndicies.Count >= 2)
+                    if (PillarNeighboutIndicies.Count >= 2)
                     {
                         m_nodeType = BlockType.PillarX4;
                         m_eulerMeshAngle = 0f;
                     }
-                    else if (pillarNeighborIndicies.Count == 1)
+                    else if (PillarNeighboutIndicies.Count == 1)
                     {
                         m_nodeType = BlockType.PillarX2Same;
                         m_eulerMeshAngle = PillarX2Rotation;
@@ -962,18 +966,18 @@ public class BlockPiece : MonoBehaviour
                         m_eulerMeshAngle = 0f;
                     }
                 }
-                else if (sameTypeDiagonals.Count == 3) // Set piece with 1 pillars -------------------------------------------------------------------------------------------------------
+                else if (SameRoomDiagonalIndicies.Count == 3) // Set piece with 1 pillars -------------------------------------------------------------------------------------------------------
                 {
-                    if (pillarNeighborIndicies.Count >= 2)
+                    if (PillarNeighboutIndicies.Count >= 2)
                     {
-                        if (pillarNeighborIndicies.Count >= 3)
+                        if (PillarNeighboutIndicies.Count >= 3)
                         {
                             m_nodeType = BlockType.PillarX4;
                             m_eulerMeshAngle = 0f;
                         }
                         else
                         {                            
-                            if (DeltaBool(Mathf.Abs(pillarNeighborIndicies[0] - pillarNeighborIndicies[1]), 2)) // If these are at opposite sides from eachother
+                            if (DeltaBool(Mathf.Abs(PillarNeighboutIndicies[0] - PillarNeighboutIndicies[1]), 2)) // If these are at opposite sides from eachother
                             {
                                 m_nodeType = BlockType.PillarX4;
                                 m_eulerMeshAngle = 0f;
@@ -1003,10 +1007,10 @@ public class BlockPiece : MonoBehaviour
                         }
 
                     }
-                    else if (pillarNeighborIndicies.Count == 1)
+                    else if (PillarNeighboutIndicies.Count == 1)
                     {
                         // If diagonal and linear are same row or column then we only need 2 pillars not 3
-                        if (NeighborMatrixMatchAny(pillarNeighborIndicies[0], nonSameTypeDiagonals[0]))
+                        if (NeighborMatrixMatchAny(PillarNeighboutIndicies[0], DifferentRoomDiagonalIndicies[0]))
                         {
                             m_nodeType = BlockType.PillarX2Same;
                             m_eulerMeshAngle = PillarX2Rotation;
@@ -1023,18 +1027,18 @@ public class BlockPiece : MonoBehaviour
                         m_eulerMeshAngle = PillarX1nonDiagonalRotation;
                     }
                 }
-                else if (sameTypeDiagonals.Count == 2) // Set piece with 2 pillars -----------------------------------------------------------------------------------------------------------
+                else if (SameRoomDiagonalIndicies.Count == 2) // Set piece with 2 pillars -----------------------------------------------------------------------------------------------------------
                 {
-                    if (DeltaBool(Mathf.Abs(sameTypeDiagonals[0] - sameTypeDiagonals[1]), 1, 3)) // are the index differences equal to 1 or 3 (from index 3 to 0 - full cycle) are they next to eachother
+                    if (DeltaBool(Mathf.Abs(SameRoomDiagonalIndicies[0] - SameRoomDiagonalIndicies[1]), 1, 3)) // are the index differences equal to 1 or 3 (from index 3 to 0 - full cycle) are they next to eachother
                     {
-                        if (pillarNeighborIndicies.Count >= 3)
+                        if (PillarNeighboutIndicies.Count >= 3)
                         {
                             m_nodeType = BlockType.PillarX4;
                             m_eulerMeshAngle = 0f;
                         }
-                        else if (pillarNeighborIndicies.Count == 2)
+                        else if (PillarNeighboutIndicies.Count == 2)
                         {
-                            if (DeltaBool(Mathf.Abs(pillarNeighborIndicies[0] - pillarNeighborIndicies[1]), 2)) // If these are at opposite sides from eachother
+                            if (DeltaBool(Mathf.Abs(PillarNeighboutIndicies[0] - PillarNeighboutIndicies[1]), 2)) // If these are at opposite sides from eachother
                             {
                                 m_nodeType = BlockType.PillarX4;
                                 m_eulerMeshAngle = 0f;
@@ -1061,7 +1065,7 @@ public class BlockPiece : MonoBehaviour
                                 }
                             }
                         }
-                        else if (pillarNeighborIndicies.Count == 1) // Set 3 Pillars Open
+                        else if (PillarNeighboutIndicies.Count == 1) // Set 3 Pillars Open
                         {
                             int count = 0;
                             if (DiagonalToLinearOnlyCount(out count))
@@ -1093,12 +1097,12 @@ public class BlockPiece : MonoBehaviour
                     else ///////// DIFFERENCE BETWEEN DIAGONALS IS 2 -------------------- ################################
                     {
                         // At this point, we have a split piece at best (2 opposite pillars)
-                        if (pillarNeighborIndicies.Count >= 2)
+                        if (PillarNeighboutIndicies.Count >= 2)
                         {
                             m_nodeType = BlockType.PillarX4;
                             m_eulerMeshAngle = 0f;
                         }
-                        else if (pillarNeighborIndicies.Count == 1)
+                        else if (PillarNeighboutIndicies.Count == 1)
                         {
                             m_nodeType = BlockType.PillarX3;
                             m_eulerMeshAngle = PillarX3RotationLinearSingle;
@@ -1110,7 +1114,7 @@ public class BlockPiece : MonoBehaviour
                         }
                     }
                 }
-                else if (sameTypeDiagonals.Count == 1) // Set piece with 3 pillar -----------------------------------------------------------------------------------------------------------
+                else if (SameRoomDiagonalIndicies.Count == 1) // Set piece with 3 pillar -----------------------------------------------------------------------------------------------------------
                 {
                     if (LinearToDiagonalOnlyAny())
                     {
@@ -1138,9 +1142,9 @@ public class BlockPiece : MonoBehaviour
     {
         if (entrance)
         {
-            for (int i = 0; i < neighbors.Length; i++)
+            for (int i = 0; i < Neighbours.Length; i++)
             {
-                if (neighbors[i] == null)
+                if (Neighbours[i] == null)
                 {
                     SetExit(exitDoorModel, i, 4.155f, true, exit);
                 }
@@ -1148,12 +1152,12 @@ public class BlockPiece : MonoBehaviour
         }
         else
         {
-            for (int i = 0; i < neighbors.Length; i++)
+            for (int i = 0; i < Neighbours.Length; i++)
             {
-                if (acceptedIndicies.Contains(i))
+                if (AcceptedIndicies.Contains(i))
                 {
                     SetExit(exitDoorModel, BuildingGeneration.GetOppositeNeighborIndex(i), 3.732f, false, exit);
-                    Debug.Log("Created Exit Node at: (" + xCoord + ", " + zCoord + ") on floor [" + yCoord + "]");
+                    Debug.Log("Created Exit Node at: (" + m_X + ", " + m_Z + ") on floor [" + m_Y + "]");
                     break;
                 }
             }
@@ -1163,11 +1167,11 @@ public class BlockPiece : MonoBehaviour
     
     private bool isDiagonalNeighborType(int index, Predicate<BlockPiece> nodeMatch)
     {
-        if (index < diagonalNeighbors.Length)
+        if (index < DiagonalNeighbours.Length)
         {
-            if (diagonalNeighbors[index] != null)
+            if (DiagonalNeighbours[index] != null)
             {
-                return nodeMatch.Invoke(diagonalNeighbors[index].GetComponent<BlockPiece>());
+                return nodeMatch.Invoke(DiagonalNeighbours[index].GetComponent<BlockPiece>());
             }
         }
 
@@ -1176,11 +1180,11 @@ public class BlockPiece : MonoBehaviour
 
     private bool isDiagonalNeighborCorridor(int index)
     {
-        if (index < diagonalNeighbors.Length)
+        if (index < DiagonalNeighbours.Length)
         {
-            if (diagonalNeighbors[index] != null)
+            if (DiagonalNeighbours[index] != null)
             {
-                BlockPiece diaN = diagonalNeighbors[index].GetComponent<BlockPiece>();
+                BlockPiece diaN = DiagonalNeighbours[index].GetComponent<BlockPiece>();
                 if (diaN.isCorridor && !diaN.isStairNode && diaN.isWalkable)
                     return true; 
             }
@@ -1191,10 +1195,10 @@ public class BlockPiece : MonoBehaviour
 
     private bool isDiagonalNeighborRoom(int index)
     {
-        if (index < diagonalNeighbors.Length)
+        if (index < DiagonalNeighbours.Length)
         {
-            if (diagonalNeighbors[index] != null)
-                return diagonalNeighbors[index].GetComponent<BlockPiece>().isRoom;  
+            if (DiagonalNeighbours[index] != null)
+                return DiagonalNeighbours[index].GetComponent<BlockPiece>().isRoom;  
         }
 
         return false;
@@ -1203,11 +1207,11 @@ public class BlockPiece : MonoBehaviour
 
     public bool isNeighbor(GameObject checkBlock)
     {
-        for (int n = 0; n < neighbors.Length; n++)
+        for (int n = 0; n < Neighbours.Length; n++)
         {
-            if (neighbors[n] != null)
+            if (Neighbours[n] != null)
             {
-                if (checkBlock == neighbors[n])
+                if (checkBlock == Neighbours[n])
                     return true;
             }
         }
@@ -1245,7 +1249,7 @@ public class BlockPiece : MonoBehaviour
         {
             Destroy(m_InstantiatedModel);
             m_InstantiatedModel = null;
-            meshType = null;
+            m_Mesh = null;
         }
     }
 
@@ -1256,16 +1260,16 @@ public class BlockPiece : MonoBehaviour
             m_InstantiatedModel = Instantiate(obj, transform.position, obj.transform.rotation) as GameObject;
             m_InstantiatedModel.transform.SetParent(transform);
 
-            if (!thisBuilding.ColorTesting)
+            if (!m_Building.ColorTesting)
             {
                 m_InstantiatedModel.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
                 m_InstantiatedModel.transform.localRotation = Quaternion.Euler(270f, m_eulerMeshAngle, 0f);
             }
             
 
-            if (meshType == null)
+            if (m_Mesh == null)
             {
-                meshType = m_InstantiatedModel.GetComponentInChildren<MeshRenderer>();
+                m_Mesh = m_InstantiatedModel.GetComponentInChildren<MeshRenderer>();
             }
         }
     }
@@ -1280,9 +1284,9 @@ public class BlockPiece : MonoBehaviour
             m_InstantiatedModel.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
             m_InstantiatedModel.transform.localRotation = Quaternion.Euler(270f, m_eulerMeshAngle, 0f);
 
-            if (meshType == null)
+            if (m_Mesh == null)
             {
-                meshType = m_InstantiatedModel.GetComponentInChildren<MeshRenderer>();
+                m_Mesh = m_InstantiatedModel.GetComponentInChildren<MeshRenderer>();
             }
         }
     }
@@ -1296,9 +1300,9 @@ public class BlockPiece : MonoBehaviour
             m_InstantiatedModel.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
             m_InstantiatedModel.transform.localRotation = Quaternion.Euler(270f, rotation, 0f);
 
-            if (meshType == null)
+            if (m_Mesh == null)
             {
-                meshType = m_InstantiatedModel.GetComponentInChildren<MeshRenderer>();
+                m_Mesh = m_InstantiatedModel.GetComponentInChildren<MeshRenderer>();
             }
         }
         
@@ -1306,30 +1310,30 @@ public class BlockPiece : MonoBehaviour
 
     public void SetCoordinates(int x, int y, int z)
     {
-        xCoord = x;
-        yCoord = y;
-        zCoord = z;
+        m_X = x;
+        m_Y = y;
+        m_Z = z;
     }
 
     public int GetX()
     {
-        return xCoord;
+        return m_X;
     }
 
     public int GetY()
     {
-        return yCoord;
+        return m_Y;
     }
 
     public int GetZ()
     {
-        return zCoord;
+        return m_Z;
     }
 
 	// Update is called once per frame
 	void Update ()
     {
-        if (thisBuilding.ColorTesting)
+        if (m_Building.ColorTesting)
         {
             // Shows the algorithm after all checks and pathfinding searches have been completed
             
@@ -1377,7 +1381,7 @@ public class BlockPiece : MonoBehaviour
                 }
             }
         }
-        else if (thisBuilding.DecorationTesting)
+        else if (m_Building.DecorationTesting)
         {
             if (isDecordated)
             {
@@ -1385,9 +1389,9 @@ public class BlockPiece : MonoBehaviour
                 return;
             }
         }
-        else if (thisBuilding.RoomTesting)
+        else if (m_Building.RoomTesting)
         {
-            switch(roomBelonging)
+            switch(TypeRoom)
             {
                 case RoomType.Bathroom:
                     ChangeMaterialColor(unWalkableColor);
@@ -1428,9 +1432,9 @@ public class BlockPiece : MonoBehaviour
 
     public void ChangeMaterialColor(Color toColor)
     {
-        if (meshType != null)
+        if (m_Mesh != null)
         {
-            meshType.material.color = Color.Lerp(meshType.material.color, toColor, colorSmooth * Time.deltaTime);
+            m_Mesh.material.color = Color.Lerp(m_Mesh.material.color, toColor, colorSmooth * Time.deltaTime);
         }
     }
     
@@ -1443,6 +1447,6 @@ public class BlockPiece : MonoBehaviour
 
     public void ResetBlockLink()
     {
-        parent = null;
+        ParentPath = null;
     }
 }

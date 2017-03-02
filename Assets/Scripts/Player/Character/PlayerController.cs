@@ -13,7 +13,7 @@ public class PlayerController : PlayerComponent
 
     public Camera m_Camera;
     public MovementSettings movementSettings = new MovementSettings();
-    public MouseLook mouseLook = new MouseLook();
+    public MouseLook MouseLook = new MouseLook();
     public AdvancedSettings advancedSettings = new AdvancedSettings();
 
     private Rigidbody m_RigidBody;
@@ -43,7 +43,7 @@ public class PlayerController : PlayerComponent
     private Vector3 m_InitialCameraOrigin;
     private Vector3 m_CameraOrigin;
 
-    public AnimationCurve m_AudioCurveModifier;
+    public AnimationCurve m_AudioCurveModifier; // <--- change this to seriazlized private
 
     [SerializeField] private float m_StepInterval;
     [SerializeField] private AudioClip[] m_FootstepSounds;    // an array of footstep sounds that will be randomly selected from.
@@ -57,9 +57,8 @@ public class PlayerController : PlayerComponent
     private float m_StepCycle;
     private float m_NextStep;
     private AudioSource m_AudioSource;
-    public bool doorGrabbed;
 
-    public MouseLook playerLook { get { return mouseLook; } }
+    public bool DoorGrabbed;
 
     public Vector3 Velocity     { get { return m_RigidBody.velocity; } }
 
@@ -83,13 +82,13 @@ public class PlayerController : PlayerComponent
         m_NextStep = m_StepCycle / 2f;
         m_AudioSource = GetComponent<AudioSource>();
         m_AudioLevelMax = m_AudioSource.volume;
-        doorGrabbed = false;
-        mouseLook.Init(transform, m_Camera.transform);
+        DoorGrabbed = false;
+        MouseLook.Init(transform, m_Camera.transform);
     }
 
     public void DisableMouseLock()
     {
-        mouseLook.lockCursor = false;
+        MouseLook.lockCursor = false;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
@@ -227,6 +226,9 @@ public class PlayerController : PlayerComponent
             m_Jump = true;
         }
 
+        // TODO - Find appropriate mechanic for reducing the hit box when crouching
+        // We might need to apply collision layers for sight which only get the trigger box around the player -
+        // Then the trigger box can change in size? but then how do we actually affect the collision box boundaries?
         if (Input.GetKey(movementSettings.CrouchKey))
         {
             m_Crouching = true;
@@ -260,7 +262,7 @@ public class PlayerController : PlayerComponent
 
         float v = 1f;
         if (m_Crouching)
-            v += (3 * movementSettings.CrouchMultiplier); // 2x for each foot
+            v += (3 * movementSettings.CrouchMultiplier);
 
         return v;
     }
@@ -389,14 +391,14 @@ public class PlayerController : PlayerComponent
 
     private void RotateView()
     {
-        if (!doorGrabbed)
+        if (!DoorGrabbed)
         {
             //avoids the mouse looking if the game is effectively paused
             if (Mathf.Abs(Time.timeScale) < float.Epsilon) return;
 
             // get the rotation before it's changed
             float oldYRotation = transform.eulerAngles.y;
-            mouseLook.LookRotation(transform, m_Camera.transform);
+            MouseLook.LookRotation(transform, m_Camera.transform);
             if (m_IsGrounded || advancedSettings.airControl)
             {
                 // Rotate the rigidbody velocity to match the new direction that the character is looking

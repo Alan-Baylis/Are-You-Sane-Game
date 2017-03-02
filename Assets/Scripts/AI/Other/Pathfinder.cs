@@ -17,42 +17,42 @@ public class BlockPieceWaypoint
 public class Pathfinder : MonoBehaviour
 {
 
-    public List<GameObject> combinedPathNodes;
+    public List<GameObject> CombinedPathNodes;
 
-    public List<GameObject> pathNodes;
-    public List<GameObject> openedNodes;
-    public List<GameObject> closedNodes;
-    private GameObject onBlock;
-    private BlockPiece onNode;
+    public List<GameObject> PathNodes;
+    public List<GameObject> OpenedNodes;
+    public List<GameObject> ClosedNodes;
+    private GameObject m_OnBlock;
+    private BlockPiece m_OnNode;
 
     // Use this for initialization
     void Start ()
     {
-        pathNodes = new List<GameObject>();
-        openedNodes = new List<GameObject>();
-        closedNodes = new List<GameObject>();
+        PathNodes = new List<GameObject>();
+        OpenedNodes = new List<GameObject>();
+        ClosedNodes = new List<GameObject>();
 	}
 
     public void CombineLocalPath()
     {
-        combinedPathNodes.AddRange(pathNodes);
+        CombinedPathNodes.AddRange(PathNodes);
     }
 
     public void SetOnNode(GameObject node)
     {
-        onBlock = node;
-        onNode = node.GetComponent<BlockPiece>();
+        m_OnBlock = node;
+        m_OnNode = node.GetComponent<BlockPiece>();
     }
 
     public void SetOnNode(BlockPiece node)
     {
-        onBlock = node.gameObject;
-        onNode = node;
+        m_OnBlock = node.gameObject;
+        m_OnNode = node;
     }
 
     public GameObject GetOnNode()
     {
-        return onBlock;
+        return m_OnBlock;
     }
 
     private void ScoreNeighbor(BlockPiece lookingAt, BlockPiece neighbor, GameObject goalNode, float addedG)
@@ -79,18 +79,18 @@ public class Pathfinder : MonoBehaviour
         GameObject bestNode = null;
 
         // Check our list is no broken and assign a gameObject to the first one from the list
-        if (openedNodes != null)
+        if (OpenedNodes != null)
         {
-            if (openedNodes.Count > 0)
+            if (OpenedNodes.Count > 0)
             {
-                bestNode = openedNodes[0];
+                bestNode = OpenedNodes[0];
             }
         }
         
         // cycle through all nodes opened re-assigning the best node upon a lower estimated distance
-        for (int i = 1; i < openedNodes.Count; i++)
+        for (int i = 1; i < OpenedNodes.Count; i++)
         {
-            BlockPiece n1 = openedNodes[i].GetComponent<BlockPiece>();
+            BlockPiece n1 = OpenedNodes[i].GetComponent<BlockPiece>();
             BlockPiece n2 = bestNode.GetComponent<BlockPiece>();
             if (n1.f < n2.f)
             {
@@ -137,13 +137,13 @@ public class Pathfinder : MonoBehaviour
     {
         GameObject nodeObject = goalNode;
         BlockPiece node = nodeObject.GetComponent<BlockPiece>();
-        pathNodes.Add(nodeObject);
+        PathNodes.Add(nodeObject);
 
         // Loop back through all the parented nodes from the goal
-        while (nodeObject != onBlock)
+        while (nodeObject != m_OnBlock)
         {
             // Change the object to it's object's parent
-            nodeObject = node.parent;
+            nodeObject = node.ParentPath;
 
             // Re-apply and re-take the node component
             node = nodeObject.GetComponent<BlockPiece>();
@@ -152,51 +152,51 @@ public class Pathfinder : MonoBehaviour
             {
                 node.isSearchClosed = false;
                 node.isSearchPath = true;
-                closedNodes.Remove(nodeObject);
-                pathNodes.Add(nodeObject);
+                ClosedNodes.Remove(nodeObject);
+                PathNodes.Add(nodeObject);
             }
         }
 
         // This will add the list in reverse therefore we must flip it
-        pathNodes.Reverse();
+        PathNodes.Reverse();
 
         if (combinePath)
-            combinedPathNodes.AddRange(pathNodes);
+            CombinedPathNodes.AddRange(PathNodes);
     }
 
     public void ResetLists(bool combinedReset)
     {
         // reset node statistics in lists for future use
-        foreach (GameObject go in pathNodes)
+        foreach (GameObject go in PathNodes)
         {
             go.GetComponent<BlockPiece>().isSearchPath = false;
             go.GetComponent<BlockPiece>().ResetHeuristics();
             //go.GetComponent<BlockPiece>().ResetBlockLink();
         }
             
-        foreach (GameObject go in openedNodes)
+        foreach (GameObject go in OpenedNodes)
         {
             go.GetComponent<BlockPiece>().isSearchOpened = false;
         }
             
-        foreach (GameObject go in closedNodes)
+        foreach (GameObject go in ClosedNodes)
         {
             go.GetComponent<BlockPiece>().isSearchClosed = false;
         }
         
         // Clear all old lists
-        pathNodes.Clear(); 
-        openedNodes.Clear();
-        closedNodes.Clear();
+        PathNodes.Clear(); 
+        OpenedNodes.Clear();
+        ClosedNodes.Clear();
 
         if (combinedReset)
-            combinedPathNodes.Clear();
+            CombinedPathNodes.Clear();
     }
 
 
     public List<GameObject> GetPathPartition()
     {
-        return pathNodes;
+        return PathNodes;
     }
 
     // Overloaded for the gameObject property from the Blockpiece monobehaviour
@@ -211,22 +211,22 @@ public class Pathfinder : MonoBehaviour
 
         ResetLists(false);
         int cycles = 0;
-        BlockPiece lookingAt = onBlock.GetComponent<BlockPiece>();
-        closedNodes.Add(lookingAt.gameObject);
+        BlockPiece lookingAt = m_OnBlock.GetComponent<BlockPiece>();
+        ClosedNodes.Add(lookingAt.gameObject);
         lookingAt.isSearchClosed = true;
         lookingAt.g = 0;
 
-        while (lookingAt.gameObject != goalNode && openedNodes.Count >= 0)
+        while (lookingAt.gameObject != goalNode && OpenedNodes.Count >= 0)
         {
-            for (int i = 0; i < lookingAt.neighbors.Length; i++)
+            for (int i = 0; i < lookingAt.Neighbours.Length; i++)
             {
                 BlockPiece neighbor = null;
-                if (lookingAt.neighbors[i] != null)
+                if (lookingAt.Neighbours[i] != null)
                 {
                     // Check if this node exists, since there could be empty slots in the neighbors array due to being out of bounds
                     // Check if it is on the closed list, if not then continue process
                     // TO NOTE: following overloaded methods will implement their additional checks here
-                    neighbor = lookingAt.neighbors[i].GetComponent<BlockPiece>();
+                    neighbor = lookingAt.Neighbours[i].GetComponent<BlockPiece>();
                     if (neighbor.isWalkable && !neighbor.isSearchClosed && !neighbor.isStairNode)
                     {
                         
@@ -238,9 +238,9 @@ public class Pathfinder : MonoBehaviour
                         {
                             // All nodes looked at will be placed in the opened list
                             ScoreNeighbor(lookingAt, neighbor, goalNode, addedG);
-                            openedNodes.Add(neighbor.gameObject);
+                            OpenedNodes.Add(neighbor.gameObject);
                             neighbor.isSearchOpened = true;
-                            neighbor.parent = lookingAt.gameObject;
+                            neighbor.ParentPath = lookingAt.gameObject;
                         }
                         else
                         {
@@ -249,7 +249,7 @@ public class Pathfinder : MonoBehaviour
                             // if so change the G and F costs accordingly
                             if (lookingAt.g + addedG < neighbor.g)
                             {
-                                neighbor.parent = lookingAt.gameObject;
+                                neighbor.ParentPath = lookingAt.gameObject;
                                 ScoreNeighbor(lookingAt, neighbor, goalNode, addedG);
                             }
                         }
@@ -262,12 +262,12 @@ public class Pathfinder : MonoBehaviour
             // Assign the new "current" node to look at
             // Drop and select nodes from the opened list and place them in the closed list
             GameObject nextInPath = GetBestNode();
-            if (nextInPath != null && !closedNodes.Contains(nextInPath))
+            if (nextInPath != null && !ClosedNodes.Contains(nextInPath))
             {
                 nextInPath.GetComponent<BlockPiece>().isSearchOpened = false;
                 nextInPath.GetComponent<BlockPiece>().isSearchClosed = true;
-                openedNodes.Remove(nextInPath);
-                closedNodes.Add(nextInPath);
+                OpenedNodes.Remove(nextInPath);
+                ClosedNodes.Add(nextInPath);
 
                 // This will eventually place the goal node
                 lookingAt = nextInPath.GetComponent<BlockPiece>();
@@ -276,7 +276,7 @@ public class Pathfinder : MonoBehaviour
             cycles++;
             if (cycles > 1500)
             {
-                Debug.Log("Starting Search: + " + onBlock.ToString() + " Floor: [" + onBlock.GetComponent<BlockPiece>().GetY() + "] ~ Cannot Find::");
+                Debug.Log("Starting Search: + " + m_OnBlock.ToString() + " Floor: [" + m_OnBlock.GetComponent<BlockPiece>().GetY() + "] ~ Cannot Find::");
                 Debug.Log(goalNode.ToString() + " Floor: [" + goalNode.GetComponent<BlockPiece>().GetY() + "]");
                 Debug.Log("Could not find a path in time.");
                 return false;
@@ -285,14 +285,14 @@ public class Pathfinder : MonoBehaviour
         ////////// END OF WHILE LOOP
 
         // If the closed nodes list doesnt contain the goal node then something has gone wrong and no paths can be found
-        if (!closedNodes.Contains(goalNode))
+        if (!ClosedNodes.Contains(goalNode))
         {
-            foreach (GameObject go in closedNodes)
+            foreach (GameObject go in ClosedNodes)
             {
                 go.GetComponent<BlockPiece>().isSearchClosed = false;
             }
 
-            closedNodes.Clear();
+            ClosedNodes.Clear();
             return false;
         }
         else
@@ -315,34 +315,34 @@ public class Pathfinder : MonoBehaviour
 
         ResetLists(false);
         int cycles = 0;
-        BlockPiece lookingAt = onBlock.GetComponent<BlockPiece>();
-        closedNodes.Add(lookingAt.gameObject);
+        BlockPiece lookingAt = m_OnBlock.GetComponent<BlockPiece>();
+        ClosedNodes.Add(lookingAt.gameObject);
         lookingAt.isSearchClosed = true;
         lookingAt.g = 0;
 
-        while (lookingAt.gameObject != goalNode && openedNodes.Count >= 0)
+        while (lookingAt.gameObject != goalNode && OpenedNodes.Count >= 0)
         {
-            for (int i = 0; i < lookingAt.neighbors.Length; i++)
+            for (int i = 0; i < lookingAt.Neighbours.Length; i++)
             {
                 BlockPiece neighbor = null;
-                if (lookingAt.neighbors[i] != null)
+                if (lookingAt.Neighbours[i] != null)
                 {
-                    neighbor = lookingAt.neighbors[i].GetComponent<BlockPiece>();
+                    neighbor = lookingAt.Neighbours[i].GetComponent<BlockPiece>();
                     if (neighbor.isWalkable && !neighbor.isSearchClosed && !neighbor.isStairNode && exlusiveSearch.Invoke(neighbor))
                     {
                         float addedG = 1;
                         if (!neighbor.isSearchOpened)
                         {
                             ScoreNeighbor(lookingAt, neighbor, goalNode, addedG);
-                            openedNodes.Add(neighbor.gameObject);
+                            OpenedNodes.Add(neighbor.gameObject);
                             neighbor.isSearchOpened = true;
-                            neighbor.parent = lookingAt.gameObject;
+                            neighbor.ParentPath = lookingAt.gameObject;
                         }
                         else
                         {
                             if (lookingAt.g + addedG < neighbor.g)
                             {
-                                neighbor.parent = lookingAt.gameObject;
+                                neighbor.ParentPath = lookingAt.gameObject;
                                 ScoreNeighbor(lookingAt, neighbor, goalNode, addedG);
                             }
                         }
@@ -351,12 +351,12 @@ public class Pathfinder : MonoBehaviour
             }
 
             GameObject nextInPath = GetBestNode();
-            if (nextInPath != null && !closedNodes.Contains(nextInPath))
+            if (nextInPath != null && !ClosedNodes.Contains(nextInPath))
             {
                 nextInPath.GetComponent<BlockPiece>().isSearchOpened = false;
                 nextInPath.GetComponent<BlockPiece>().isSearchClosed = true;
-                openedNodes.Remove(nextInPath);
-                closedNodes.Add(nextInPath);
+                OpenedNodes.Remove(nextInPath);
+                ClosedNodes.Add(nextInPath);
 
                 // This will eventually place the goal node
                 lookingAt = nextInPath.GetComponent<BlockPiece>();
@@ -365,7 +365,7 @@ public class Pathfinder : MonoBehaviour
             cycles++;
             if (cycles > 1500)
             {
-                Debug.Log("Starting Search: + " + onBlock.ToString() + " Floor: [" + onBlock.GetComponent<BlockPiece>().GetY() + "] ~ Cannot Find::");
+                Debug.Log("Starting Search: + " + m_OnBlock.ToString() + " Floor: [" + m_OnBlock.GetComponent<BlockPiece>().GetY() + "] ~ Cannot Find::");
                 Debug.Log(goalNode.ToString() + " Floor: [" + goalNode.GetComponent<BlockPiece>().GetY() + "]");
                 Debug.Log("Could not find a path in time.");
                 return false;
@@ -374,14 +374,14 @@ public class Pathfinder : MonoBehaviour
         ////////// END OF WHILE LOOP
 
         // If the closed nodes list doesnt contain the goal node then something has gone wrong and no paths can be found
-        if (!closedNodes.Contains(goalNode))
+        if (!ClosedNodes.Contains(goalNode))
         {
-            foreach (GameObject go in closedNodes)
+            foreach (GameObject go in ClosedNodes)
             {
                 go.GetComponent<BlockPiece>().isSearchClosed = false;
             }
 
-            closedNodes.Clear();
+            ClosedNodes.Clear();
             return false;
         }
         else
@@ -401,22 +401,22 @@ public class Pathfinder : MonoBehaviour
         }
 
         ResetLists(false);
-        BlockPiece lookingAt = onBlock.GetComponent<BlockPiece>();
+        BlockPiece lookingAt = m_OnBlock.GetComponent<BlockPiece>();
         int cycles = 0;
-        closedNodes.Add(lookingAt.gameObject);
+        ClosedNodes.Add(lookingAt.gameObject);
         lookingAt.isSearchClosed = true;
         lookingAt.g = 0;
         bool roomEntered = lookingAt.isRoom; // Are we already in a room?
-        Room lastEnteredRoom = (roomEntered) ? lookingAt.thisRoom : null;
+        Room lastEnteredRoom = (roomEntered) ? lookingAt.Room : null;
 
-        while (lookingAt.gameObject != goalNode && openedNodes.Count >= 0)
+        while (lookingAt.gameObject != goalNode && OpenedNodes.Count >= 0)
         {
-            for (int i = 0; i < lookingAt.neighbors.Length; i++) // Remember, this only looks at and scores neighbors, no actions should be done here to change the bias of the search
+            for (int i = 0; i < lookingAt.Neighbours.Length; i++) // Remember, this only looks at and scores neighbors, no actions should be done here to change the bias of the search
             {
                 BlockPiece neighbor = null;
-                if (lookingAt.neighbors[i] != null)
+                if (lookingAt.Neighbours[i] != null)
                 {
-                    neighbor = lookingAt.neighbors[i].GetComponent<BlockPiece>();
+                    neighbor = lookingAt.Neighbours[i].GetComponent<BlockPiece>();
                     if (neighbor.isWalkable && !neighbor.isSearchClosed && !neighbor.isStairNode)
                     {
                         if (includeRooms)
@@ -430,7 +430,7 @@ public class Pathfinder : MonoBehaviour
                             {
                                 if (!neighbor.isRoom && !neighbor.isCorridorConnection)
                                 {
-                                    if (neighbor.thisRoom != lastEnteredRoom) // Possible this can be only check in if statement or check room name here - careful of null reference for name check
+                                    if (neighbor.Room != lastEnteredRoom) // Possible this can be only check in if statement or check room name here - careful of null reference for name check
                                         continue;
                                 }
                             }
@@ -448,15 +448,15 @@ public class Pathfinder : MonoBehaviour
                         if (!neighbor.isSearchOpened)
                         {
                             ScoreNeighbor(lookingAt, neighbor, goalNode, addedG);
-                            openedNodes.Add(neighbor.gameObject);
+                            OpenedNodes.Add(neighbor.gameObject);
                             neighbor.isSearchOpened = true;
-                            neighbor.parent = lookingAt.gameObject;
+                            neighbor.ParentPath = lookingAt.gameObject;
                         }
                         else
                         {
                             if (lookingAt.g + addedG < neighbor.g)
                             {
-                                neighbor.parent = lookingAt.gameObject;
+                                neighbor.ParentPath = lookingAt.gameObject;
                                 ScoreNeighbor(lookingAt, neighbor, goalNode, addedG);
                             }
                         }
@@ -465,12 +465,12 @@ public class Pathfinder : MonoBehaviour
             }
 
             GameObject nextInPath = GetBestNode(); // Get the best node of the neighbors we have searched for this node
-            if (nextInPath != null && !closedNodes.Contains(nextInPath))
+            if (nextInPath != null && !ClosedNodes.Contains(nextInPath))
             {
                 nextInPath.GetComponent<BlockPiece>().isSearchOpened = false;
                 nextInPath.GetComponent<BlockPiece>().isSearchClosed = true;
-                openedNodes.Remove(nextInPath);
-                closedNodes.Add(nextInPath);
+                OpenedNodes.Remove(nextInPath);
+                ClosedNodes.Add(nextInPath);
 
                 // This will eventually place the goal node
                 lookingAt = nextInPath.GetComponent<BlockPiece>();
@@ -482,7 +482,7 @@ public class Pathfinder : MonoBehaviour
                         if (!roomEntered)
                         {
                             roomEntered = true;
-                            lastEnteredRoom = lookingAt.thisRoom;
+                            lastEnteredRoom = lookingAt.Room;
                         }
                     }
                     else if (lookingAt.isCorridorConnection)
@@ -499,7 +499,7 @@ public class Pathfinder : MonoBehaviour
             cycles++;
             if (cycles > 1500)
             {
-                Debug.Log("Starting Search: + " + onBlock.ToString() + " Floor: [" + onBlock.GetComponent<BlockPiece>().GetY() + "] ~ Cannot Find::");
+                Debug.Log("Starting Search: + " + m_OnBlock.ToString() + " Floor: [" + m_OnBlock.GetComponent<BlockPiece>().GetY() + "] ~ Cannot Find::");
                 Debug.Log(goalNode.ToString() + " Floor: [" + goalNode.GetComponent<BlockPiece>().GetY() + "]");
                 Debug.Log("Could not find a path in time.");
                 return false;
@@ -508,14 +508,14 @@ public class Pathfinder : MonoBehaviour
         ////////// END OF WHILE LOOP
 
         // If the closed nodes list doesnt contain the goal node then something has gone wrong and no paths can be found
-        if (!closedNodes.Contains(goalNode))
+        if (!ClosedNodes.Contains(goalNode))
         {
-            foreach (GameObject go in closedNodes)
+            foreach (GameObject go in ClosedNodes)
             {
                 go.GetComponent<BlockPiece>().isSearchClosed = false;
             }
 
-            closedNodes.Clear();
+            ClosedNodes.Clear();
             return false;
         }
         else
@@ -536,20 +536,20 @@ public class Pathfinder : MonoBehaviour
 
         if (goalNode.GetComponent<BlockPiece>().isStairNode)
         {
-            if (onNode.GetY() != goalNode.GetComponent<BlockPiece>().GetY()) // We are looking down the stairs
+            if (m_OnNode.GetY() != goalNode.GetComponent<BlockPiece>().GetY()) // We are looking down the stairs
             {
-                goalNode = goalNode.GetComponent<BlockPiece>().parent;      
+                goalNode = goalNode.GetComponent<BlockPiece>().ParentPath;      
             }
             else // We are looking up the stairs
             {
-                goalNode = goalNode.GetComponent<BlockPiece>().parent.GetComponent<BlockPiece>().nextFloorParent.gameObject;
+                goalNode = goalNode.GetComponent<BlockPiece>().ParentPath.GetComponent<BlockPiece>().StairNextParent.gameObject;
             }
         }
 
         ResetLists(true); // Reset the Combined path here aswell
-        BlockPiece lookingAt = onBlock.GetComponent<BlockPiece>(); // Store this so we have a reference to the starting onNode when the search begun
+        BlockPiece lookingAt = m_OnBlock.GetComponent<BlockPiece>(); // Store this so we have a reference to the starting onNode when the search begun
         BlockPiece lookingGoal = goalNode.GetComponent<BlockPiece>(); // Store this so we always know the building Y value of the goal node
-        int y = onNode.GetY(); // Create an integer to increment the Y iterations 
+        int y = m_OnNode.GetY(); // Create an integer to increment the Y iterations 
         
         if (y != lookingGoal.GetY()) // This funciton is recursive for call which do not have this condition
         {
@@ -561,12 +561,12 @@ public class Pathfinder : MonoBehaviour
             {
                 while(lookingGoal.GetY() < y)
                 {
-                    floor = onNode.attachedFloor;
+                    floor = m_OnNode.Floor;
                     // Possibly need to split up the per floor traversal
                     GameObject bestFloorGoal = GetBestNode(floor.routeBlocks.FindAll(n => n.isDoorNode), includeRooms); // Search the current floor for the nearest exit traversing as stated
                     if (GetPathOnFloorRoomTraversal(bestFloorGoal, includeRooms, true))
                     {
-                        SetOnNode(bestFloorGoal.GetComponent<BlockPiece>().previousFloorParent); // This should result in the onNode being set on the same floor
+                        SetOnNode(bestFloorGoal.GetComponent<BlockPiece>().StairPreviousParent); // This should result in the onNode being set on the same floor
                         y--;
                     }
                 }
@@ -580,12 +580,12 @@ public class Pathfinder : MonoBehaviour
             {
                 while(y < lookingGoal.GetY())
                 {
-                    floor = onNode.attachedFloor;
+                    floor = m_OnNode.Floor;
                     // Possibly need to split up the per floor traversal
                     GameObject bestFloorGoal = GetBestNode(floor.routeBlocks.FindAll(n => n.isStairConnection), includeRooms); // Search the current floor for the nearest exit traversing as stated
                     if (GetPathOnFloorRoomTraversal(bestFloorGoal, includeRooms, true))
                     {
-                        SetOnNode(bestFloorGoal.GetComponent<BlockPiece>().nextFloorParent);
+                        SetOnNode(bestFloorGoal.GetComponent<BlockPiece>().StairNextParent);
                         y++;
                     }                    
                 }
@@ -601,13 +601,6 @@ public class Pathfinder : MonoBehaviour
             return GetPathOnFloorRoomTraversal(goalNode, includeRooms, true);
         }
     }
-
-
-
-
-
-
-
 
 }
 

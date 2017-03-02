@@ -4,8 +4,6 @@ using System.Collections;
 
 public class PlayerHeadBob : MonoBehaviour
 {
-
-
     public Camera Camera;
     public CurveControlledBob motionBob = new CurveControlledBob();
     public LerpControlledBob jumpAndLandingBob = new LerpControlledBob();
@@ -42,6 +40,7 @@ public class PlayerHeadBob : MonoBehaviour
             newCameraPosition = Camera.transform.localPosition;
             newCameraPosition.y = m_OriginalCameraPosition.y - jumpAndLandingBob.Offset();
         }
+
         Camera.transform.localPosition = newCameraPosition;
 
         if (!m_PreviouslyGrounded && playerController.Grounded)

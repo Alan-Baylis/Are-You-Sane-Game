@@ -36,9 +36,9 @@ public static class Decorate
         for (int i = 0; i < amount; i++)
         {
             d_node.isDecordated = true;
-            if (d_node.neighbors[direction] != null)
+            if (d_node.Neighbours[direction] != null)
             {
-                d_node = d_node.neighbors[direction].GetComponent<BlockPiece>();
+                d_node = d_node.Neighbours[direction].GetComponent<BlockPiece>();
             }
             else
             {
@@ -51,7 +51,7 @@ public static class Decorate
     private static int spaceInNeighborDirection(int neighborDirection, BlockPiece node, Predicate<BlockPiece> stopSearch)
     {
         int freeSpace = 0;
-        GameObject neighbor = node.neighbors[neighborDirection];
+        GameObject neighbor = node.Neighbours[neighborDirection];
 
         while (neighbor != null)
         {
@@ -60,7 +60,7 @@ public static class Decorate
                 break;
 
             freeSpace++;
-            neighbor = neighborNode.neighbors[neighborDirection];
+            neighbor = neighborNode.Neighbours[neighborDirection];
         }
 
         return freeSpace;
@@ -77,11 +77,11 @@ public static class Decorate
             if (orientations[i].edgeProperties != null) // Use the null factor as the bool to see if we need edges or not
             {
                 // If we are narrow then we are not going to pad the walls heavily like open nodes
-                freeSpaceWays[i] = orientations[i].directionAount <= spaceInNeighborDirection(node.orderedAcceptedIndicies[(orientations[i].orderedIndex + moduloAddition % 4)], node, n => (n.isRoom != node.isRoom) || n.isDecordated || !MatchWallRequirements(orientations[i].edgeProperties, n, modulusFromRotation));
+                freeSpaceWays[i] = orientations[i].directionAount <= spaceInNeighborDirection(node.OrderedAcceptedIndicies[(orientations[i].orderedIndex + moduloAddition % 4)], node, n => (n.isRoom != node.isRoom) || n.isDecordated || !MatchWallRequirements(orientations[i].edgeProperties, n, modulusFromRotation));
             }
             else
             {
-                freeSpaceWays[i] = orientations[i].directionAount <= spaceInNeighborDirection(node.orderedAcceptedIndicies[(orientations[i].orderedIndex + moduloAddition % 4)], node, n => (n.isRoom != node.isRoom) || n.isDecordated || (n.isRoomConnection || n.isCorridorConnection));
+                freeSpaceWays[i] = orientations[i].directionAount <= spaceInNeighborDirection(node.OrderedAcceptedIndicies[(orientations[i].orderedIndex + moduloAddition % 4)], node, n => (n.isRoom != node.isRoom) || n.isDecordated || (n.isRoomConnection || n.isCorridorConnection));
             }
         }
 
@@ -93,11 +93,11 @@ public static class Decorate
         if (orientation.edgeProperties != null)
         {
             int modulusAddition = Mathf.RoundToInt(node.eulerMeshAngle / 90f);
-            return orientation.directionAount <= spaceInNeighborDirection(node.orderedAcceptedIndicies[(orientation.orderedIndex + moduloAddition % 4)], node, n => (n.isRoom != node.isRoom) || n.isDecordated || !MatchWallRequirements(orientation.edgeProperties, n, modulusAddition));
+            return orientation.directionAount <= spaceInNeighborDirection(node.OrderedAcceptedIndicies[(orientation.orderedIndex + moduloAddition % 4)], node, n => (n.isRoom != node.isRoom) || n.isDecordated || !MatchWallRequirements(orientation.edgeProperties, n, modulusAddition));
         }
         else
         {
-            return orientation.directionAount <= spaceInNeighborDirection(node.orderedAcceptedIndicies[(orientation.orderedIndex + moduloAddition % 4)], node, n => (n.isRoom != node.isRoom) || n.isDecordated || (n.isRoomConnection || n.isCorridorConnection));
+            return orientation.directionAount <= spaceInNeighborDirection(node.OrderedAcceptedIndicies[(orientation.orderedIndex + moduloAddition % 4)], node, n => (n.isRoom != node.isRoom) || n.isDecordated || (n.isRoomConnection || n.isCorridorConnection));
         }
     }
 
@@ -110,12 +110,12 @@ public static class Decorate
             {
                 if (decoration.EdgesRquiredOnOrdered[e].EdgeOrderedIndex == direction)
                 {
-                    return decoration.OrderedRequirements[direction] <= spaceInNeighborDirection(node.orderedAcceptedIndicies[direction], node, n => !n.isRoom || n.isDecordated || !MatchWallRequirements(decoration.EdgesRquiredOnOrdered[e], n, modulusAddition));
+                    return decoration.OrderedRequirements[direction] <= spaceInNeighborDirection(node.OrderedAcceptedIndicies[direction], node, n => !n.isRoom || n.isDecordated || !MatchWallRequirements(decoration.EdgesRquiredOnOrdered[e], n, modulusAddition));
                 }
             }
         }
 
-        return decoration.OrderedRequirements[direction] <= spaceInNeighborDirection(node.orderedAcceptedIndicies[direction], node, n => !n.isRoom || n.isDecordated || n.isRoomConnection);
+        return decoration.OrderedRequirements[direction] <= spaceInNeighborDirection(node.OrderedAcceptedIndicies[direction], node, n => !n.isRoom || n.isDecordated || n.isRoomConnection);
     }
 
     private static OrientD AqquireOrientFromEdgeMatch(DecorationPiece decoration, int orderedIndex)
@@ -140,7 +140,7 @@ public static class Decorate
             wallRequiredArray[i] = (directionRequirements.wallsRequired[i] + modulusAddition % 4);
         }
 
-        return wallRequiredArray.ContainsAll(node.wallEdgeIndicies);
+        return wallRequiredArray.ContainsAll(node.WallEdgeIndicies);
         //return node.wallEdgeIndicies.ContainsAll(directionRequirements.wallsRequired);
     }
 
@@ -149,7 +149,7 @@ public static class Decorate
     {
         for (int i = 0; i < 4; i++)
         {
-            if (node.roomConnectionIndex == node.orderedAcceptedIndicies[((decoration.doorIndexOnOrdered + i) % 4)])
+            if (node.RoomConnectionIndex == node.OrderedAcceptedIndicies[((decoration.doorIndexOnOrdered + i) % 4)])
             {
                 return (i * 90f);
             }
@@ -186,7 +186,7 @@ public static class Decorate
 
     public static bool DecorationMultiDoorConnection(DecorationPiece decoration, BlockPiece node)
     {
-        return decoration.doorConnection && (node.roomConnectionIndex == node.orderedAcceptedIndicies[decoration.doorIndexOnOrdered]);
+        return decoration.doorConnection && (node.RoomConnectionIndex == node.OrderedAcceptedIndicies[decoration.doorIndexOnOrdered]);
     }
 
     public static DecorationCollection GetBlockTypeCollection(DecorationCollection[] collections, BlockPiece node)
@@ -272,7 +272,7 @@ public static class Decorate
     {
         for (int i = 0; i < decoration.OrderedRequirements.Length; i++)
         {
-            DecorateDirection(node.orderedAcceptedIndicies[i], decoration.OrderedRequirements[i], node);
+            DecorateDirection(node.OrderedAcceptedIndicies[i], decoration.OrderedRequirements[i], node);
         }
 
         node.SetDecoration(decoration);
@@ -282,7 +282,7 @@ public static class Decorate
     {
         for (int i = 0; i < decoration.piece.OrderedRequirements.Length; i++)
         {
-            DecorateDirection(node.orderedAcceptedIndicies[i], decoration.piece.OrderedRequirements[i], node);
+            DecorateDirection(node.OrderedAcceptedIndicies[i], decoration.piece.OrderedRequirements[i], node);
         }
 
         node.SetDecoration(decoration.piece, decoration.rotation);

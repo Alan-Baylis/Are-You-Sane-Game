@@ -105,7 +105,7 @@ public class LAMovement : LAComponent
     /// </summary>
     private bool reachedSelectedDistination
     {
-        get { return (m_pathingIndex >= m_pathFinder.combinedPathNodes.Count); }
+        get { return (m_pathingIndex >= m_pathFinder.CombinedPathNodes.Count); }
     }
 
     private bool TrackToPosition(Vector3 position, bool faceTarget)
@@ -181,9 +181,9 @@ public class LAMovement : LAComponent
 
     private void StoreNextPosition()
     {
-        if (m_pathingIndex < m_pathFinder.combinedPathNodes.Count) // Otherwise we will check once out of exception
+        if (m_pathingIndex < m_pathFinder.CombinedPathNodes.Count) // Otherwise we will check once out of exception
         {
-            m_nextTargetNode = m_pathFinder.combinedPathNodes[m_pathingIndex].GetComponent<BlockPiece>();
+            m_nextTargetNode = m_pathFinder.CombinedPathNodes[m_pathingIndex].GetComponent<BlockPiece>();
 
             //if (m_nextTargetNode.isOccluded)
             //{
@@ -204,10 +204,10 @@ public class LAMovement : LAComponent
             Annie.Animation.Walk(true);
 
             // If the first index is closer than zero then we will start pathing from that index instead
-            if (m_pathFinder.combinedPathNodes.Count > 1)
+            if (m_pathFinder.CombinedPathNodes.Count > 1)
             {
-                m_pathingIndex = (Vector3.Distance(m_pathFinder.combinedPathNodes[0].transform.position, transform.position) >
-                                Vector3.Distance(m_pathFinder.combinedPathNodes[1].transform.position, transform.position)) ? 1 : 0;
+                m_pathingIndex = (Vector3.Distance(m_pathFinder.CombinedPathNodes[0].transform.position, transform.position) >
+                                Vector3.Distance(m_pathFinder.CombinedPathNodes[1].transform.position, transform.position)) ? 1 : 0;
             }
             else
             {
@@ -344,7 +344,7 @@ public class LAMovement : LAComponent
     /// <returns></returns>
     public BehaviourTreeStatus MoveToLastSeen() // We need to carefully combine this method with the fixed update or find a way of tickikng the behaviour tree through fixed update aswell as regualr update
     {
-        if (TrackToObject(m_pathFinder.combinedPathNodes[m_pathingIndex], true))
+        if (TrackToObject(m_pathFinder.CombinedPathNodes[m_pathingIndex], true))
         {
             m_pathingIndex++;
             StoreNextPosition();
@@ -378,7 +378,7 @@ public class LAMovement : LAComponent
 
     public BehaviourTreeStatus MoveToDestination()
     {
-        if (TrackToObject(m_pathFinder.combinedPathNodes[m_pathingIndex], true))
+        if (TrackToObject(m_pathFinder.CombinedPathNodes[m_pathingIndex], true))
         {
             m_pathingIndex++;
             StoreNextPosition();

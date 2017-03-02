@@ -9,6 +9,7 @@ public enum LAAwareness
     Hiding = 3
 }
 
+// Create different startle events - maybe eventually create an event class for my own events
 public enum StartleEvent
 {
     PlayerFlashLight = 0,
@@ -25,6 +26,7 @@ public class LASense : LAComponent
     private const float SIGHT_TIMER = 5f;
     private float m_incresaedSightTimer = SIGHT_TIMER;
 
+    // Eventually make a player struct with information gained that we know about the player
     private BlockPiece player_previouslySeenNode = null;
     private BlockPiece player_lastSeenNode;
     private Vector3 player_lastSeenPosition;
@@ -164,7 +166,6 @@ public class LASense : LAComponent
 
     public bool PlayerInSight()
     {
-
         if (CastSight(false, PLAYER_TAG))
         {
             if (m_prevoked) // Continue to be prevoked if we have not reset the condition
