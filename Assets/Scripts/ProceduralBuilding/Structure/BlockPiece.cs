@@ -14,6 +14,7 @@ public class BlockPiece : MonoBehaviour
     private FloorLevel m_Floor              = null;
     private GameObject m_InstantiatedModel  = null;
     private LightBehaviour m_Light          = null;
+    private CellDoorScript m_RoomDoor       = null;
 
     // Bools used for debugging
     [SerializeField] private bool m_NTopLeft     = false;
@@ -88,6 +89,7 @@ public class BlockPiece : MonoBehaviour
     public GameObject ParentPath;
     public BlockPiece StairNextParent;
     public BlockPiece StairPreviousParent;
+    public CellDoorScript RoomDoor;
 
     private int m_X;
     private int m_Y;
@@ -1287,6 +1289,16 @@ public class BlockPiece : MonoBehaviour
             if (m_Mesh == null)
             {
                 m_Mesh = m_InstantiatedModel.GetComponentInChildren<MeshRenderer>();
+            }
+
+
+            if (piece.doorConnection && isRoomConnection) // Or when implenented Is Dummy Exit? Maybe have to get a differnt componenet for openining? Inheritance Door interactions? -> Inheritance object interactions
+            {
+                m_RoomDoor = m_InstantiatedModel.GetComponentInChildren<CellDoorScript>(); // Should use depth first search for component type - please unity
+                if (m_RoomDoor == null)
+                {
+                    Debug.LogError("No Door Script can be found for appropriate Decoration");
+                }
             }
         }
     }
