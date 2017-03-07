@@ -419,26 +419,34 @@ public class Pathfinder : MonoBehaviour
                     neighbor = lookingAt.Neighbours[i].GetComponent<BlockPiece>();
                     if (neighbor.isWalkable && !neighbor.isSearchClosed && !neighbor.isStairNode)
                     {
+                        // If we want to include rooms
                         if (includeRooms)
                         {
+                            // If a room has not been enterend from the previous in path
                             if (!roomEntered)
                             {
-                                if (!neighbor.isCorridor && !neighbor.isRoomConnection)
+                                // If the current node cannot enter rooms then we cannot look for room neighbours
+                                if (!lookingAt.isCorridorConnection && neighbor.isRoom)
                                     continue;
+
+                                // If its a room but not a connection then we cannot connect even though we ARE a connection
+                                if (lookingAt.isCorridorConnection && (neighbor.isRoom && !neighbor.isRoomConnection))
+                                    continue;
+
                             }
                             else
                             {
-                                if (!neighbor.isRoom && !neighbor.isCorridorConnection)
+                                // Possible this can be only check in if statement or check room name here - careful of null reference for name check
+                                if (neighbor.Room != lastEnteredRoom && !neighbor.isCorridorConnection)
                                 {
-                                    if (neighbor.Room != lastEnteredRoom) // Possible this can be only check in if statement or check room name here - careful of null reference for name check
-                                        continue;
+                                    continue;
                                 }
                             }
                         }
                         else
                         {
                             // The neighbor must be a corridor
-                            if (!neighbor.isCorridor)
+                            if (neighbor.isRoom)
                                 continue;
                         }
 
