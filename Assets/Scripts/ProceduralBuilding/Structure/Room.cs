@@ -22,6 +22,8 @@ public class Room
     private RoomType m_scene;
     private string m_roomName;
 
+    public BlockPiece[] Nodes { get { return nodes; } }
+
     public string roomName
     {
         get { return m_roomName; }
