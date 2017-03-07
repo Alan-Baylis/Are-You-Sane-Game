@@ -26,7 +26,8 @@ public class PlayerController : PlayerComponent
     private bool m_Jumping;
     private bool m_IsGrounded;
 
-    [SerializeField] [Range(0f, 1f)] private float m_RunstepLenghten;
+    [SerializeField]
+    [Range(0f, 1f)] private float m_RunstepLenghten;
 
 
     [SerializeField]
@@ -134,9 +135,6 @@ public class PlayerController : PlayerComponent
         public void UpdateDesiredTargetSpeed(Vector2 input, bool crouching)
         {
             if (input == Vector2.zero) return;
-
-            Debug.Log("Inputs X, Y: " + input.x + ", " + input.y);
-            Debug.Log("Move Weight: " + m_MovementWeight);
             if (input.x > 0 || input.x < 0)
                 CurrentTargetSpeed = StrafeSpeed;
 
@@ -172,8 +170,6 @@ public class PlayerController : PlayerComponent
             }
 
             m_MovementWeight = m_MedianInputWeight * CurrentTargetSpeed * Time.deltaTime;
-
-            Debug.Log("Percent Movement: " + GetMovementWeightPercentage());
         }
 
 
