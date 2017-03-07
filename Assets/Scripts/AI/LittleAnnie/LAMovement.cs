@@ -16,7 +16,7 @@ public class LAMovement : LAComponent
     // Used for spawning just above the ground of the floor
     private static readonly Vector3 offSetY = new Vector3(0f, 1.5f, 0f);        // The Spawn instantiation offset to we spawn above the blockpieces and fall down onto them
     private List<BlockPiece> m_currentPatrolBlocks = new List<BlockPiece>();    // Used for adding the range of corridor blocks on the current floor - potentially swap to the current floor level
-    private BlockPiece m_currentNodePosition;                                   // The current Block Piece position of Annie
+    private BlockPiece m_currentNode;                                   // The current Block Piece position of Annie
     private Pathfinder m_pathFinder;                                            // Used for our pathfinding - we must remotely set and get the paths & nodes through it
     private int m_pathingIndex = 0;                                             // Index used to count the progress between the block pieces while patrolling
     private bool m_reachedSelectedPath = false;                                 // Bool for stating if we have reached the target destination for pathfinding
@@ -57,11 +57,11 @@ public class LAMovement : LAComponent
     /// <summary>
     /// Returns the floor number from the current node position of the AI
     /// </summary>
-    public int currentFloor { get { return m_currentNodePosition.GetY(); } }
+    public int currentFloor { get { return m_currentNode.GetY(); } }
 
     public Pathfinder pathfinder { get { return m_pathFinder; } }
 
-    public BlockPiece currentNodePosition { get { return m_currentNodePosition; } }
+    public BlockPiece currentNodePosition { get { return m_currentNode; } }
 
     [System.Serializable]
     public class AdvancedSettings
@@ -96,7 +96,7 @@ public class LAMovement : LAComponent
 
     public void SetNodePosition(BlockPiece node)
     {
-        m_currentNodePosition = node; // WE NEVER NEED TO SET THIS - IT SHOULD ALWAYS BE DONE FOR US
+        m_currentNode = node; // WE NEVER NEED TO SET THIS - IT SHOULD ALWAYS BE DONE FOR US
         m_pathFinder.SetOnNode(node);
     }
 
@@ -150,7 +150,7 @@ public class LAMovement : LAComponent
     public void InstantlyMoveToNode(BlockPiece node)
     {        
         Annie.gameObject.transform.position = node.transform.position + offSetY;
-        if (m_currentNodePosition == null)
+        if (m_currentNode == null)
             SetNodePosition(node);
 
         SetPatrolBlocks(node.GetY());
@@ -170,7 +170,7 @@ public class LAMovement : LAComponent
     {
         List<BlockPiece> avaliableNodes = new List<BlockPiece>();
         avaliableNodes.AddRange(m_currentPatrolBlocks);
-        avaliableNodes.Remove(m_currentNodePosition);
+        avaliableNodes.Remove(m_currentNode);
         int chosenIndex = UnityEngine.Random.Range(0, avaliableNodes.Count);
 
         m_targetTempNode = avaliableNodes[chosenIndex];
@@ -185,6 +185,8 @@ public class LAMovement : LAComponent
         {
             m_nextTargetNode = m_pathFinder.CombinedPathNodes[m_pathingIndex].GetComponent<BlockPiece>();
 
+            OpenIncomingDoors();
+
             //if (m_nextTargetNode.isOccluded)
             //{
             //    Annie.Physics.DisableGravity();
@@ -196,10 +198,34 @@ public class LAMovement : LAComponent
         }
     }
 
+    private void OpenIncomingDoors()
+    {
+        if (m_currentNode != null)
+        {
+            bool leave = m_currentNode.isRoomConnection && m_nextTargetNode.isCorridorConnection;
+            bool enter = m_currentNode.isCorridorConnection && m_nextTargetNode.isRoomConnection;
+            if (leave || enter) 
+            {
+                Debug.Log("Attempting To Open A Door");
+                CellDoorScript door = (enter) ? m_nextTargetNode.GetComponentInChildren<CellDoorScript>() : m_currentNode.GetComponentInChildren<CellDoorScript>();
+                if (door != null)
+                {
+                    if (!door.isOpened)
+                        door.AttemptToOpen();
+                }
+                else
+                {
+                    Debug.LogError("IT WAS NULL");
+                }
+                    
+            }
+        }
+    }
+
     public void SelectMovementPath(BlockPiece destination)
     {
         m_targetTempNode = destination;
-        if (m_pathFinder.GetPathFullTraversal(destination.gameObject, false)) // At the moment she does not include rooms, but it is programmed ready for room testing, just need to apply the actions of opening doors on pathing
+        if (m_pathFinder.GetPathFullTraversal(destination.gameObject, true)) // At the moment she does not include rooms, but it is programmed ready for room testing, just need to apply the actions of opening doors on pathing
         {
             Annie.Animation.Walk(true);
 
@@ -276,7 +302,6 @@ public class LAMovement : LAComponent
 
         if ((Mathf.Abs(m_MovementVector.x) > float.Epsilon || Mathf.Abs(m_MovementVector.z) > float.Epsilon) && (advancedSettings.airControl || m_IsGrounded))
         {
-            //Vector3 desiredMove = (transform.forward * m_MovementVector.z) + (transform.right * m_MovementVector.x);
             m_MovementVector = Vector3.ProjectOnPlane(m_MovementVector, m_GroundContactNormal).normalized;
             m_MovementVector.x = m_MovementVector.x * movementSettings.CurrentTargetSpeed;
             m_MovementVector.z = m_MovementVector.z * movementSettings.CurrentTargetSpeed;
