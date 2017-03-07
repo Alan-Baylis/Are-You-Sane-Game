@@ -141,17 +141,6 @@ public class PAIG : MonoBehaviour
         //        Debug.LogWarning("Regenerated Floors!");
         //    }
         //}
-        if (annieSpawned)
-        {
-            // Director Setting volume for player audio filtering
-
-            float deltaY = Mathf.Abs(m_player.transform.position.y - AnnieObject.transform.position.y);
-            
-
-            
-
-        }
-
 
 
         if (AIHumanTesting)
@@ -190,6 +179,20 @@ public class PAIG : MonoBehaviour
                     Debug.Log("Annie Current Node: Floor[" + AnnieObject.Movement.currentFloor + "] Node (" + AnnieObject.Movement.currentNodePosition.GetX() + ", " + AnnieObject.Movement.currentNodePosition.GetZ() + ")");
                     Debug.Log("Below Above Desintation for Annie: Floor [" + randomNode.GetY() + "] Node (" + randomNode.GetX() + ", " + randomNode.GetZ() + ")");
 
+                    AnnieObject.Movement.SelectMovementPath(randomNode); // This should be alright?
+                }
+            }
+
+            if (Input.GetKeyDown(KeyCode.K))
+            {
+                List<BlockPiece> roomNodes = new List<BlockPiece>();
+                foreach(Room room in buildingGen.Floors[AnnieObject.Movement.currentFloor].AllRooms)
+                    foreach(BlockPiece node in room.Nodes)
+                        roomNodes.Add(node);
+
+                if (roomNodes.Count > 0)
+                {
+                    BlockPiece randomNode = roomNodes[UnityEngine.Random.Range(0, roomNodes.Count)];
                     AnnieObject.Movement.SelectMovementPath(randomNode); // This should be alright?
                 }
             }
