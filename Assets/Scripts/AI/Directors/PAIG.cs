@@ -45,7 +45,7 @@ public class PAIG : MonoBehaviour
         AIDirector = this;
     }
 
-
+    
 
     private BlockPiece closestNode = null;
     private float playerDistance = 500f;
@@ -56,16 +56,22 @@ public class PAIG : MonoBehaviour
     float m_ClosestDeltaNodeDistance = 0.0f;
 
 
+    public static void PlayerGameSound(AudioSource source)
+    {
+        
+    }
+
+
     public void MovementTriggerCallBack()
     {
         if (annieSpawned)
         {
-            float deltaY = Mathf.Abs(m_player.CurrentFloor - AnnieObject.Movement.currentFloor);
+            float deltaY = Mathf.Abs(m_player.CurrentFloor - AnnieObject.Movement.CurrentFloor);
 
             // If the player is within one floor of the AI and there has been a change in position
             if (deltaY <= 1)
             {
-                if (m_player.CurrentFloor > AnnieObject.Movement.currentFloor)
+                if (m_player.CurrentFloor > AnnieObject.Movement.CurrentFloor)
                 {
                     // Get the closest node to the connecting floor
                     m_ClosestDeltaNodeDistance = 1000f;
@@ -94,7 +100,7 @@ public class PAIG : MonoBehaviour
                         }
                     }
                 }
-                else if (m_player.CurrentFloor < AnnieObject.Movement.currentFloor)
+                else if (m_player.CurrentFloor < AnnieObject.Movement.CurrentFloor)
                 {
                     // Get the closest node to the connecting floor
                     m_ClosestDeltaNodeDistance = 1000f;
@@ -155,15 +161,15 @@ public class PAIG : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.Minus))
             {
                 //Get Annie to traverse down a floor
-                List<BlockPiece> corridorNodesBelow = buildingGen.Floors[AnnieObject.Movement.currentFloor - 1].routeBlocks.FindAll(n => !n.isStairNode);
+                List<BlockPiece> corridorNodesBelow = buildingGen.Floors[AnnieObject.Movement.CurrentFloor - 1].routeBlocks.FindAll(n => !n.isStairNode);
 
                 if (corridorNodesBelow.Count != 0)
                 {
                     BlockPiece randomNode = corridorNodesBelow[UnityEngine.Random.Range(0, corridorNodesBelow.Count)];
-                    Debug.Log("Annie Current Node: Floor[" + AnnieObject.Movement.currentFloor + "] Node (" + AnnieObject.Movement.currentNodePosition.GetX() + ", " + AnnieObject.Movement.currentNodePosition.GetZ() + ")");
+                    Debug.Log("Annie Current Node: Floor[" + AnnieObject.Movement.CurrentFloor + "] Node (" + AnnieObject.Movement.CurrentNode.GetX() + ", " + AnnieObject.Movement.CurrentNode.GetZ() + ")");
                     Debug.Log("Below Move Desintation for Annie: Floor [" + randomNode.GetY() + "] Node (" + randomNode.GetX() + ", " + randomNode.GetZ() + ")");
 
-                    AnnieObject.Movement.SelectMovementPath(randomNode); // This should be alright?
+                    AnnieObject.Movement.SetAndGetPathToInterest(randomNode); // This should be alright?
                 }
             }
 
@@ -171,29 +177,29 @@ public class PAIG : MonoBehaviour
             {
                 //Get annie to travese up a floor
                 //Get Annie to traverse down a floor
-                List<BlockPiece> corridorNodesAbove = buildingGen.Floors[AnnieObject.Movement.currentFloor + 1].routeBlocks.FindAll(n => !n.isStairNode);
+                List<BlockPiece> corridorNodesAbove = buildingGen.Floors[AnnieObject.Movement.CurrentFloor + 1].routeBlocks.FindAll(n => !n.isStairNode);
 
                 if (corridorNodesAbove.Count != 0)
                 {
                     BlockPiece randomNode = corridorNodesAbove[UnityEngine.Random.Range(0, corridorNodesAbove.Count)];
-                    Debug.Log("Annie Current Node: Floor[" + AnnieObject.Movement.currentFloor + "] Node (" + AnnieObject.Movement.currentNodePosition.GetX() + ", " + AnnieObject.Movement.currentNodePosition.GetZ() + ")");
+                    Debug.Log("Annie Current Node: Floor[" + AnnieObject.Movement.CurrentFloor + "] Node (" + AnnieObject.Movement.CurrentNode.GetX() + ", " + AnnieObject.Movement.CurrentNode.GetZ() + ")");
                     Debug.Log("Below Above Desintation for Annie: Floor [" + randomNode.GetY() + "] Node (" + randomNode.GetX() + ", " + randomNode.GetZ() + ")");
 
-                    AnnieObject.Movement.SelectMovementPath(randomNode); // This should be alright?
+                    AnnieObject.Movement.SetAndGetPathToInterest(randomNode); // This should be alright?
                 }
             }
 
             if (Input.GetKeyDown(KeyCode.K))
             {
                 List<BlockPiece> roomNodes = new List<BlockPiece>();
-                foreach(Room room in buildingGen.Floors[AnnieObject.Movement.currentFloor].AllRooms)
+                foreach(Room room in buildingGen.Floors[AnnieObject.Movement.CurrentFloor].AllRooms)
                     foreach(BlockPiece node in room.Nodes)
                         roomNodes.Add(node);
 
                 if (roomNodes.Count > 0)
                 {
                     BlockPiece randomNode = roomNodes[UnityEngine.Random.Range(0, roomNodes.Count)];
-                    AnnieObject.Movement.SelectMovementPath(randomNode); // This should be alright?
+                    AnnieObject.Movement.SetAndGetPathToInterest(randomNode); // This should be alright?
                 }
             }
 
@@ -262,7 +268,7 @@ public class PAIG : MonoBehaviour
         if (!m_player.BlockPosition.isStairNode && m_player.BlockPosition.isCorridor)
         {
             Debug.Log("Moving Annie To Player Node now");
-            AnnieObject.Movement.SelectMovementPath(m_player.BlockPosition); // This should be alright?
+            AnnieObject.Movement.SetAndGetPathToInterest(m_player.BlockPosition); // This should be alright?
         }
         else
         {
@@ -270,9 +276,9 @@ public class PAIG : MonoBehaviour
             if (corridorNodes.Count != 0)
             {
                 BlockPiece randomNode = corridorNodes[UnityEngine.Random.Range(0, corridorNodes.Count)];
-                Debug.Log("Annie Current Node: Floor[" + AnnieObject.Movement.currentFloor + "] Node (" + AnnieObject.Movement.currentNodePosition.GetX() + ", " + AnnieObject.Movement.currentNodePosition.GetZ() + ")");
+                Debug.Log("Annie Current Node: Floor[" + AnnieObject.Movement.CurrentFloor + "] Node (" + AnnieObject.Movement.CurrentNode.GetX() + ", " + AnnieObject.Movement.CurrentNode.GetZ() + ")");
                 Debug.Log("Below Above Desintation for Annie: Floor [" + randomNode.GetY() + "] Node (" + randomNode.GetX() + ", " + randomNode.GetZ() + ")");
-                AnnieObject.Movement.SelectMovementPath(randomNode); // This should be alright?
+                AnnieObject.Movement.SetAndGetPathToInterest(randomNode); // This should be alright?
             }
         }
         
