@@ -110,35 +110,62 @@ public class LAObject : MonoBehaviour // This Class has to be responsible for ma
                     .Sequence("Sight Checks")
                     #region SIGHT
 
-                        .Condition("Player In Sight", t => (m_sense.Prevoked) ? m_sense.PlayerInSight() : m_sense.PlayerInFOV()) // If we have been initially prevoked then just lock on to sight
-                        // We got back to FOV sight once we have lost first sight - makes sense so the player can hide again, but maybe increase the fov here or inscript based on time since last encounter
+                        .Condition("Player In Sight", t => m_sense.PlayerInFOV()) // If the player within our field of view - this will automatically change based on the awareness of the AI (handled internally)
+                        
+                        .Selector("Attack OR MoveToPlayer")
+                        #region ATTACK or MOVE TO PLAYER
 
-                        .Splice(MoveAttackSubTree())
+                                .Sequence("Attack")
+                                #region ATTACK
+
+                                    .Condition("In Range to Attack?", t => m_movement.InPlayerAttackRange())
+                                    .DoAction("Attack Slap Player", t =>
+                                    {
+                                        return m_attacks.SlapPlayer();
+                                    })
+
+                                #endregion
+                                .End() // End Attack Sequence
+
+                                .DoAction("MoveToPlayer", t =>
+                                {
+                                    return m_movement.MoveToPlayer();
+                                })
+
+                        #endregion
+                        .End() // End Attack or MoveToPlayer Selector
 
                     #endregion
                     .End()
 
 
                     // HEARING
-                    .Sequence("Startled Checks")
-                    #region STARTLED
+                    //.Sequence("Startled Checks")
+                    //#region STARTLED
 
-                        .Condition("Startled?", t => m_sense.Startled)
+                    //    .Selector("Point Of Interest Naviagtion")
+                    
+                    //        .Sequence("Look to Point of Interest")
+
+                    //            .Condition("Startled by Input?", t => m_sense.Startled)
+                    //            .DoAction("Turn To Point Of Interest", t =>
+                    //            {
+                    //                return m_movement.TurnToPointOfInterest();
+                    //            })
+
+                    //        .End()
+
+                            
 
 
 
+                        
+                    //    .End()
 
-                        .DoAction("Turn To Startle", t =>
-                        {
-                            return m_movement.TurnToFacePlayer();
-                        })
-
-
+                    //#endregion
+                    //.End()
 
 
-
-                    #endregion
-                    .End()
 
                     // TOUCH
                     
@@ -155,35 +182,30 @@ public class LAObject : MonoBehaviour // This Class has to be responsible for ma
                 #endregion
                 .End()
 
-                // Need to Move to Last Seen Node
-                // We will only get here if we do not see the Player
+
                 .Selector("Navigation")
                 #region NAVIGATION
 
-                    .Sequence("Move To Last Seen")
+                    .Sequence("Move To Node of Interest")
                     #region LAST SEEN MOVEMENT
 
-                        .Condition("Have we been to the Last seen Node?", t => !m_sense.LastSightInvestigated)
+                        //Do we have a node of interest? 
+                        .Condition("Have we been to the Last seen Node?", t => !m_sense.ReachedNodeOfInterest)
 
-                         // Only continue if we have NOT investigated the last seen
+                         // Move to the node of interest - this could be for any reason/perception - sound, sight etc..
                         .DoAction("Move to Last Seen", t =>
                         {
-                            // This will changed the last sight investigation if we have reached proximity
-                            return m_movement.MoveToLastSeen();
+                            return m_movement.MoveToNodeOfInterest();
                         })
 
                     #endregion
                     .End()
 
-                    // For the purposes of testing, we are allowed to select a new patrol path here and test movement as it does not affect any internal working thanks to the booleans implicit checks
-                    // We can simply just set the new movement path externally
-                    // It will do its own thing and patrol on the current blocks it has if otherwise stated to move somewhere else by a director - BOOM BIATCH
 
-                    // Move
-                    .Condition("Select New Waypoint", t => m_movement.SelectNewPatrolPosition()) // If we cannot select a new way point then continue
-                    .DoAction("Move to Waypoint", t =>
+                    // Because we dont have a node of interest then we will find a random one on the floor for now
+                    .DoAction("Select Random Waypoint On Floor", t =>
                     {
-                        return m_movement.MoveToDestination();
+                        return m_movement.SelectRandomNodeOfInterestOnFloor();
                     })
 
                 #endregion
