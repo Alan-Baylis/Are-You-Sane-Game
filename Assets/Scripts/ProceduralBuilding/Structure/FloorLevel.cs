@@ -350,7 +350,7 @@ public class FloorLevel : MonoBehaviour
         else if (other.gameObject.tag == GameTag.Annie)
         {
             //other.gameObject.GetComponent<LAObject>().Movement.currentFloor = floorNumber;
-            other.gameObject.GetComponent<LAObject>().Movement.SetPatrolBlocks(floorNumber); // The current floor for annie will change upon the actual node enter
+            other.gameObject.GetComponent<LAObject>().Movement.CollectBlocksOnFloor(floorNumber); // The current floor for annie will change upon the actual node enter
         }
     }
 
