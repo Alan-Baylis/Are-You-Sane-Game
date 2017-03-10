@@ -2,29 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 
-public enum LAMove
-{
-    Idle = 0,
-    Patrol = 1,
-    MoveToTarget = 2
-}
-
-
-
 public class LAMovement : LAComponent
 {
     // Used for spawning just above the ground of the floor
     private static readonly Vector3 offSetY = new Vector3(0f, 1.5f, 0f);        // The Spawn instantiation offset to we spawn above the blockpieces and fall down onto them
-    private List<BlockPiece> m_currentPatrolBlocks = new List<BlockPiece>();    // Used for adding the range of corridor blocks on the current floor - potentially swap to the current floor level
-    private BlockPiece m_currentNode;                                   // The current Block Piece position of Annie
-    private Pathfinder m_pathFinder;                                            // Used for our pathfinding - we must remotely set and get the paths & nodes through it
-    private int m_pathingIndex = 0;                                             // Index used to count the progress between the block pieces while patrolling
-    private bool m_reachedSelectedPath = false;                                 // Bool for stating if we have reached the target destination for pathfinding
-    private bool m_chasingLastKnowPosition = false;
-    private BlockPiece m_nextTargetNode;
+    private List<BlockPiece> m_CurrentFloorNodes = new List<BlockPiece>();    // Used for adding the range of corridor blocks on the current floor - potentially swap to the current floor level
+    private BlockPiece m_CurrentNode;                                   // The current Block Piece position of Annie
+    private Pathfinder m_Pathfinder;                                            // Used for our pathfinding - we must remotely set and get the paths & nodes through it
+    private int m_PathingIndex = 0;                                             // Index used to count the progress between the block pieces while patrolling
+    private BlockPiece m_NextTargetNode;
 
     private float m_speedModifier = 1f;
-    private bool m_climbingStairs = false;
 
     private float m_StepCycle;
     private float m_NextStep;
@@ -39,29 +27,22 @@ public class LAMovement : LAComponent
     public AdvancedSettings advancedSettings = new AdvancedSettings();
     public MovementSettings movementSettings = new MovementSettings();
 
-    [SerializeField][Range(0f, 1f)]
-    private float m_RunstepLenghten;
+    [SerializeField]
+    [Range(0f, 1f)]
+    private float m_RunstepLenghten; // 0.8f works quite well
 
     [SerializeField]
     private float m_StepInterval;
 
 
-
-    private List<GameObject> m_currentMovementBlocks = new List<GameObject>();
-
-    private BlockPiece m_targetTempNode;
-    private bool m_stairClimbing = false;
-
-    LAMove m_moveState = LAMove.Idle;
-
     /// <summary>
     /// Returns the floor number from the current node position of the AI
     /// </summary>
-    public int currentFloor { get { return m_currentNode.GetY(); } }
+    public int CurrentFloor { get { return m_CurrentNode.GetY(); } }
 
-    public Pathfinder pathfinder { get { return m_pathFinder; } }
+    public Pathfinder Pathfinder { get { return m_Pathfinder; } }
 
-    public BlockPiece currentNodePosition { get { return m_currentNode; } }
+    public BlockPiece CurrentNode { get { return m_CurrentNode; } }
 
     [System.Serializable]
     public class AdvancedSettings
@@ -96,31 +77,23 @@ public class LAMovement : LAComponent
 
     public void SetNodePosition(BlockPiece node)
     {
-        m_currentNode = node; // WE NEVER NEED TO SET THIS - IT SHOULD ALWAYS BE DONE FOR US
-        m_pathFinder.SetOnNode(node);
-    }
-
-    /// <summary>
-    /// This is an indirect boolean which will automatically come true once the search for any position used with the pathfinder comes true
-    /// </summary>
-    private bool reachedSelectedDistination
-    {
-        get { return (m_pathingIndex >= m_pathFinder.CombinedPathNodes.Count); }
+        m_CurrentNode = node; // WE NEVER NEED TO SET THIS - IT SHOULD ALWAYS BE DONE FOR US
+        m_Pathfinder.SetOnNode(node);
     }
 
     private bool TrackToPosition(Vector3 position, bool faceTarget)
     {
         MoveToTarget(position, faceTarget);
-        return inRangeOfTargetOrObject(position);
+        return InRangeOfTarget(position);
     }
 
     private bool TrackToObject(GameObject obj, bool faceNode)
     {
         MoveToObject(obj, faceNode);
-        return inRangeOfTargetOrObject(obj.transform.position);
+        return InRangeOfTarget(obj.transform.position);
     }
 
-    private bool inRangeOfTargetOrObject(Vector3 targetPosition)
+    private bool InRangeOfTarget(Vector3 targetPosition)
     {
         return Vector3.Distance(targetPosition, transform.position) < 0.7f;
     }
@@ -150,42 +123,44 @@ public class LAMovement : LAComponent
     public void InstantlyMoveToNode(BlockPiece node)
     {        
         Annie.gameObject.transform.position = node.transform.position + offSetY;
-        if (m_currentNode == null)
+        if (m_CurrentNode == null)
             SetNodePosition(node);
 
-        SetPatrolBlocks(node.GetY());
+        CollectBlocksOnFloor(node.GetY());
         // Reset tracking and other variables and shizzle
     }
 
-    public void SetPatrolBlocks(int y)
+    public void CollectBlocksOnFloor(int y)
     {
-        m_currentPatrolBlocks.Clear();
-        m_currentPatrolBlocks.AddRange(Annie.Building.Floors[y].routeBlocks.FindAll(n => !n.isStairNode));
+        m_CurrentFloorNodes.Clear();
+        m_CurrentFloorNodes.AddRange(Annie.Building.Floors[y].floorBlocks.FindAll(n => !n.isStairNode && n.isWalkable));
     }
 
     /// <summary>
     /// This Functions assumes locates a random node from the current nodes avalaible
     /// </summary>
-    private void SelectPatrolPath()
+    private void SelectRandomPathOnFloor()
     {
         List<BlockPiece> avaliableNodes = new List<BlockPiece>();
-        avaliableNodes.AddRange(m_currentPatrolBlocks);
-        avaliableNodes.Remove(m_currentNode);
+        avaliableNodes.AddRange(m_CurrentFloorNodes);
+        avaliableNodes.Remove(m_CurrentNode);
         int chosenIndex = UnityEngine.Random.Range(0, avaliableNodes.Count);
-
-        m_targetTempNode = avaliableNodes[chosenIndex];
-        //SelectCorridorPath(m_targetTempNode.gameObject);
-
-        SelectMovementPath(m_targetTempNode);
+        SetAndGetPathToInterest(avaliableNodes[chosenIndex]);
     }
 
-    private void StoreNextPosition()
+    public void SetAndGetPathToInterest(BlockPiece nodeOfInterest)
     {
-        if (m_pathingIndex < m_pathFinder.CombinedPathNodes.Count) // Otherwise we will check once out of exception
-        {
-            m_nextTargetNode = m_pathFinder.CombinedPathNodes[m_pathingIndex].GetComponent<BlockPiece>();
+        Annie.Sense.SetNodeOfInterest(nodeOfInterest);
+        GetPathToInterest();
+    }
 
+    private bool StoreNextPosition()
+    {
+        if (m_PathingIndex < m_Pathfinder.CombinedPathNodes.Count) // Otherwise we will check once out of exception
+        {
+            m_NextTargetNode = m_Pathfinder.CombinedPathNodes[m_PathingIndex].GetComponent<BlockPiece>();
             OpenIncomingDoors();
+            return true;
 
             //if (m_nextTargetNode.isOccluded)
             //{
@@ -196,18 +171,24 @@ public class LAMovement : LAComponent
             //    Annie.Physics.EnableGravity();
             //}
         }
+        else
+        {
+            // We have reached the destination
+            Annie.Sense.ReachNodeOfInterest();
+            return false;
+        }
     }
 
     private void OpenIncomingDoors()
     {
-        if (m_currentNode != null)
+        if (m_CurrentNode != null)
         {
-            bool leave = m_currentNode.isRoomConnection && m_nextTargetNode.isCorridorConnection;
-            bool enter = m_currentNode.isCorridorConnection && m_nextTargetNode.isRoomConnection;
+            bool leave = m_CurrentNode.isRoomConnection && m_NextTargetNode.isCorridorConnection;
+            bool enter = m_CurrentNode.isCorridorConnection && m_NextTargetNode.isRoomConnection;
             if (leave || enter) 
             {
                 Debug.Log("Attempting To Open A Door");
-                CellDoorScript door = (enter) ? m_nextTargetNode.GetComponentInChildren<CellDoorScript>() : m_currentNode.GetComponentInChildren<CellDoorScript>();
+                CellDoorScript door = (enter) ? m_NextTargetNode.GetComponentInChildren<CellDoorScript>() : m_CurrentNode.GetComponentInChildren<CellDoorScript>();
                 if (door != null)
                 {
                     if (!door.isOpened)
@@ -222,30 +203,28 @@ public class LAMovement : LAComponent
         }
     }
 
-    public void SelectMovementPath(BlockPiece destination)
+    public void GetPathToInterest()
     {
-        m_targetTempNode = destination;
-        if (m_pathFinder.GetPathFullTraversal(destination.gameObject, true)) // At the moment she does not include rooms, but it is programmed ready for room testing, just need to apply the actions of opening doors on pathing
+        if (m_Pathfinder.GetPathFullTraversal(Annie.Sense.NodeOfInterest.gameObject, true)) // At the moment she does not include rooms, but it is programmed ready for room testing, just need to apply the actions of opening doors on pathing
         {
             Annie.Animation.Walk(true);
 
             // If the first index is closer than zero then we will start pathing from that index instead
-            if (m_pathFinder.CombinedPathNodes.Count > 1)
+            if (m_Pathfinder.CombinedPathNodes.Count > 1)
             {
-                m_pathingIndex = (Vector3.Distance(m_pathFinder.CombinedPathNodes[0].transform.position, transform.position) >
-                                Vector3.Distance(m_pathFinder.CombinedPathNodes[1].transform.position, transform.position)) ? 1 : 0;
+                m_PathingIndex = (Vector3.Distance(m_Pathfinder.CombinedPathNodes[0].transform.position, transform.position) >
+                                Vector3.Distance(m_Pathfinder.CombinedPathNodes[1].transform.position, transform.position)) ? 1 : 0;
             }
             else
             {
                 // Provided there is only 1 node found for a route
-                m_pathingIndex = 0;
+                m_PathingIndex = 0;
             }
             
             StoreNextPosition();
         }
         else
         {
-            Debug.LogError("No Path Could be found on patrol!: Path To: " + destination.name);
             Annie.Animation.Walk(false);
         }
         
@@ -253,30 +232,34 @@ public class LAMovement : LAComponent
 
     public bool InPlayerAttackRange()
     {
-        Vector3 relativePlayerPosition = new Vector3(player.transform.position.x, Annie.Sense.LastSeenPlayerNode.transform.position.y, player.transform.position.z);
-        return Vector3.Distance(this.transform.position, relativePlayerPosition) < 1.5f;
+        return Vector3.Distance(this.transform.position, player.transform.position) < 1.5f;
     }
 
     public BehaviourTreeStatus MoveToPlayer()
     {
         Annie.Animation.Walk(true);
-        Vector3 relativePlayerPosition = new Vector3(player.transform.position.x, Annie.Sense.LastSeenPlayerNode.transform.position.y, player.transform.position.z);
-        MoveToTarget(relativePlayerPosition, true);
+        MoveToTarget(player.transform.position, true);
         return BehaviourTreeStatus.Running;
     }
 
-    public BehaviourTreeStatus TurnToFacePlayer()
+    public BehaviourTreeStatus SelectRandomNodeOfInterestOnFloor()
+    {
+        SelectRandomPathOnFloor();
+        return BehaviourTreeStatus.Success;
+    }
+
+    public BehaviourTreeStatus TurnToPointOfInterest()
     {
         // This will continue to look at the player until the player in sight is triggered
-        Vector3 relativePlayerPosition = new Vector3(player.transform.position.x, transform.position.y, player.transform.position.z);
-        this.transform.rotation = Quaternion.Slerp(this.transform.rotation, DirectionRotation(relativePlayerPosition), 0.1f);
+        //Vector3 relativePlayerPosition = new Vector3(player.transform.position.x, transform.position.y, player.transform.position.z);
+        //this.transform.rotation = Quaternion.Slerp(this.transform.rotation, DirectionRotation(Annie.Sense.PointOfInterest), 0.1f);
         return BehaviourTreeStatus.Running;
     }
 
     // Use this for initialization
     public override void Start ()
     {
-        m_pathFinder = GetComponentInChildren<Pathfinder>();
+        m_Pathfinder = GetComponentInChildren<Pathfinder>();
         m_Capsule = GetComponent<CapsuleCollider>();
         m_Rigidbody = GetComponent<Rigidbody>();
 	}
@@ -367,53 +350,45 @@ public class LAMovement : LAComponent
     /// This is the method used when updateing the movement from the behaviour tree
     /// </summary>
     /// <returns></returns>
-    public BehaviourTreeStatus MoveToLastSeen() // We need to carefully combine this method with the fixed update or find a way of tickikng the behaviour tree through fixed update aswell as regualr update
+    public BehaviourTreeStatus MoveToNodeOfInterest() // We need to carefully combine this method with the fixed update or find a way of tickikng the behaviour tree through fixed update aswell as regualr update
     {
-        if (TrackToObject(m_pathFinder.CombinedPathNodes[m_pathingIndex], true))
+        if (TrackToObject(m_Pathfinder.CombinedPathNodes[m_PathingIndex], true))
         {
-            m_pathingIndex++;
-            StoreNextPosition();
+            m_PathingIndex++;
+            if (StoreNextPosition())
+            {
+                return BehaviourTreeStatus.Running;
+            }
+            else
+            {
+                return BehaviourTreeStatus.Success;
+            }
         }
 
-        if (Vector3.Distance(Annie.Sense.LastSeenPlayerNode.transform.position, transform.position) < 1f)
-        {
-            Debug.Log("Reached Last seen");
-            m_reachedSelectedPath = true;
-            Annie.Sense.LastSightInvestigated = true;
-            return BehaviourTreeStatus.Success;
-        }
-        else
-        {
-            return BehaviourTreeStatus.Running;
-        }
-    }
+        return BehaviourTreeStatus.Running;
 
-    public bool SelectNewPatrolPosition()
-    {
-        if (reachedSelectedDistination)
-        {
-            SelectPatrolPath();
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        //if (Vector3.Distance(Annie.Sense.NodeOfInterest.transform.position, transform.position) < 1f)
+        //{
+        //    Debug.Log("Reached Last seen");
+        //    Annie.Sense.ReachNodeOfInterest();
+        //    return BehaviourTreeStatus.Success;
+        //}
+        //else
+        //{
+        //    return BehaviourTreeStatus.Running;
+        //}
     }
 
     public BehaviourTreeStatus MoveToDestination()
     {
-        if (TrackToObject(m_pathFinder.CombinedPathNodes[m_pathingIndex], true))
+        if (TrackToObject(m_Pathfinder.CombinedPathNodes[m_PathingIndex], true))
         {
-            m_pathingIndex++;
+            m_PathingIndex++;
             StoreNextPosition();
         }
 
         return BehaviourTreeStatus.Running; // Or true.. not sure just yet
     }
-
-
-
 
     /// sphere cast down just beyond the bottom of the capsule to see if the capsule is colliding round the bottom
     private void GroundCheck()
