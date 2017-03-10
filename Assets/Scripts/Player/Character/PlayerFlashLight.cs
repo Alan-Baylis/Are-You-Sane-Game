@@ -82,7 +82,7 @@ public class PlayerFlashLight : PlayerComponent
             if (col.gameObject.tag == GameTag.Annie)
             {
                 LAObject annie = col.gameObject.GetComponent<LAObject>();
-                if (annie != null && (annie.Movement.currentFloor != m_Player.Heuristics.CurrentFloor))
+                if (annie != null && (annie.Movement.CurrentFloor != m_Player.Heuristics.CurrentFloor))
                     continue;
 
                 Vector3 dir = col.gameObject.transform.position - transform.position;
@@ -99,7 +99,7 @@ public class PlayerFlashLight : PlayerComponent
                     {
                         if (hit.transform.tag == GameTag.Annie)
                         {
-                            hit.transform.gameObject.GetComponent<LAObject>().Sense.Startle(transform.position, StartleEvent.PlayerFlashLight);
+                            //hit.transform.gameObject.GetComponent<LAObject>().Sense.Startle(transform.position, StartleEvent.PlayerFlashLight);
                         }
                     }
                 }
