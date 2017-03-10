@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityStandardAssets.ImageEffects;
+using System;
 
 /// <summary>
 /// Values signify the allowed hours of survival from madness
@@ -89,5 +90,35 @@ public static class GameConstants
     public const float InsanityBackgroundAlphaCap = 40f;
     public const float MotionBlurSpread = 0.6f;
     public const float InsanityVortexCap = 50f;
+}
+
+public class GameInfoTimer
+{
+    private float m_MaxTime;
+    private float m_CurrentTime;
+
+    public float CurrentTime { get { return m_CurrentTime; } }
+
+    public void ResetTime() { m_CurrentTime = m_MaxTime; }
+    public bool Tick(float deltaTime, bool activate)
+    {
+        if (m_CurrentTime > 0)
+        {
+            m_CurrentTime -= deltaTime;
+            return false;
+        }
+        else
+        {
+            if (activate)
+                m_CurrentTime = m_MaxTime;
+            
+            return true;
+        }
+    }
+
+    public GameInfoTimer(float maxTime)
+    {
+        this.m_MaxTime = maxTime;
+    }
 }
 
