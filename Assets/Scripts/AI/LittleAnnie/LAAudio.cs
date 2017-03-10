@@ -83,7 +83,7 @@ public class LAAudio : LAComponent
                 evaluation = 1f;
             }
 
-            Debug.Log("Evaluation scale: " + evaluation);
+            //Debug.Log("Evaluation scale: " + evaluation);
             m_DirectorFeetVolume = m_InitialVolumeFeetSource * evaluation;
             m_DirectorVoiceVolume = (m_InitialVolumeVoiceSource * evaluation) * m_VoiceVolumeScale;
         }
@@ -117,6 +117,9 @@ public class LAAudio : LAComponent
             }
         }
     }
+
+
+
 
     private void AssignClip(AudioClip clip, bool loop, float delay, float volumeScale)
     {
@@ -192,4 +195,7 @@ public class LAAudio : LAComponent
         //    }
         //}
     }
+
+    
+
 }
