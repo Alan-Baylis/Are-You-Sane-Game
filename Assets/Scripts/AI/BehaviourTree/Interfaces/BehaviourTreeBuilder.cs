@@ -94,6 +94,12 @@ public class BehaviourTreeBuilder
         return this;
     }
 
+    public BehaviourTreeBuilder Succeeder(string name)
+    {
+        AddParentToTop(new SucceederNode(name));
+        return this;
+    }
+
     /// <summary>
     /// Create a parallel node.
     /// </summary>

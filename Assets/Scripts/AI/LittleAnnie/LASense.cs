@@ -2,6 +2,7 @@
 using System.Collections;
 using DaTup;
 using System;
+using System.Collections.Generic;
 
 public enum LAAwareness
 {
@@ -19,7 +20,21 @@ public enum StartleEvent
     ObjectInteraction = 2,
 }
 
-public enum PerceptionType
+public class InputAIEvent
+{
+    // When something happens we need to know information about the event
+
+    public InputAIEvent()
+    {
+
+    }
+}
+
+
+
+
+
+public enum SenseType
 {
     Sound = 0, // Human-like responses for learning sound - e.g. hear something: "oh thats an X and quite close" ~or something
     Sight = 1, // Human-like responses for learning sight - e.g. see something: "oh thats an X, this is what I should do"
@@ -30,60 +45,72 @@ public enum PerceptionType
 
 public class LASense : LAComponent
 {
-    // Create a dictionary of tags and Perceptions in knowledge zone: Note - this is because different AI might have different perceptions
-    public static LAHearingInput.SoundPerception TagToPerception(string tag)
+    // Object perceptions are put inside the LASense class because different AI may have the ability to know about different perceptions
+    // Future improvements for AI for post game refactoring would include the ability to have a perception for every sense per object.
+    // Order these in priority of importance to the AI and make respective decision making in the perception loops
+    public enum ObjectPerception
     {
-        switch (tag)
-        {
-            case GameTag.Player:
-                return LAHearingInput.SoundPerception.Player;
+        Player,
+        Door,
+        Interactable,
+        Miscellaneous,
+        Unknown // every AI must have an "Unknown Rank of perception" otherwise called NONE
+    }
 
-            case GameTag.Door:
-                return LAHearingInput.SoundPerception.Door;
+    // Create a dictionary of tags and Perceptions in knowledge zone: Note - this is because different AI might have different perceptions
+    // There isnt really any otherway other than coding this dictionary for every AI as they will all have different percptions (theorectically)
+    // Thankfully the GameTags remain the same and are put in the GameData class :)
+    private Dictionary<string, ObjectPerception> m_TagPerceptions = new Dictionary<string, ObjectPerception>()
+    {
+        { GameTag.Player, ObjectPerception.Player },
+        { GameTag.Door, ObjectPerception.Door },
+        
+        // Once other tags are put in here we can set the corresponding perception of the tag.
+    };
 
-            default:
-                return LAHearingInput.SoundPerception.Miscellaneous;
-                
-        }
+
+    public ObjectPerception GetPerceptionFromTag(string tag)
+    {
+        return (m_TagPerceptions.ContainsKey(tag)) ? m_TagPerceptions[tag] : ObjectPerception.Unknown;
     }
 
     private class AlertedPerception
     {
         public bool Alerted;
-        private PerceptionType perceptionType;
-        public AlertedPerception(PerceptionType perception)
+        private SenseType senseType;
+        public AlertedPerception(SenseType sense)
         {
-            perceptionType = perception;
+            senseType = sense;
             Alerted = false;
         }
     }
 
     private class AlertedBehaviour
     {   
-        private AlertedPerception[] m_Perceptions = new LASense.AlertedPerception[Enum.GetNames(typeof(PerceptionType)).Length];
+        private AlertedPerception[] m_Perceptions = new LASense.AlertedPerception[Enum.GetNames(typeof(SenseType)).Length];
 
         public AlertedBehaviour()
         {
             for (int i = 0; i < m_Perceptions.Length; i++)
-                m_Perceptions[i] = new AlertedPerception((PerceptionType)i);
+                m_Perceptions[i] = new AlertedPerception((SenseType)i);
         }
 
         public AlertedPerception Sound
         {
-            get { return m_Perceptions[(int)PerceptionType.Sound]; }
-            set { m_Perceptions[(int)PerceptionType.Sound] = value; }
+            get { return m_Perceptions[(int)SenseType.Sound]; }
+            set { m_Perceptions[(int)SenseType.Sound] = value; }
         }
 
         public AlertedPerception Sight
         {
-            get { return m_Perceptions[(int)PerceptionType.Sight]; }
-            set { m_Perceptions[(int)PerceptionType.Sight] = value; }
+            get { return m_Perceptions[(int)SenseType.Sight]; }
+            set { m_Perceptions[(int)SenseType.Sight] = value; }
         }
 
         public AlertedPerception Touch
         {
-            get { return m_Perceptions[(int)PerceptionType.Touch]; }
-            set { m_Perceptions[(int)PerceptionType.Touch] = value; }
+            get { return m_Perceptions[(int)SenseType.Touch]; }
+            set { m_Perceptions[(int)SenseType.Touch] = value; }
         }
 
         public bool Alerted()
@@ -97,6 +124,11 @@ public class LASense : LAComponent
         }
     }
 
+    public void SetSoundAlert(bool active)
+    {
+        m_Awareness.Sound.Alerted = active;
+    }
+
     private const float LAUGH_GENTLE_RESET = 9F;
     private const float SIGHT_TIMER_RESET = 5F;
 
@@ -105,6 +137,9 @@ public class LASense : LAComponent
 
     private const float SIGHT_DISTANCE_MIN = 20F;
     private const float SIGHT_DISTANCE_MAX = 60F;
+
+    private LAHearingInput m_HearingInput;
+    public LAHearingInput Ears { get { return m_HearingInput; } }
 
     private AlertedBehaviour m_Awareness = new AlertedBehaviour();
     // Ideas on creating a Player Makup Struct based on information we know of the player
@@ -265,6 +300,13 @@ public class LASense : LAComponent
         m_ReachedNodeOfInterest = false;
     }
 
+    public BehaviourTreeStatus EvaluateSoundToInterest()
+    {
+        Vector3 positionOfSound = m_HearingInput.GetPointOfHighestPrioritySound();
+        SetNodeOfInterest(Annie.Building.GetNodeClosestToPoint(positionOfSound));
+        return BehaviourTreeStatus.Failure; // Return failure so the tree can continue to procces other tasks
+    }
+
     /// <summary>
     /// FOV will change based on the awareness of the AI - this is handled internally and doesnt need to be worried about from external classes
     /// </summary>
@@ -278,20 +320,16 @@ public class LASense : LAComponent
         // If we are alerted by any of our perceptions then we will have increased FOV (more aware AI)
         m_PlayerInSight = CastSight(alert, GameTag.Player, player.transform.position, OnPlayerSight);
         if (m_PlayerInSight)
-        {
-            Debug.Log("Player in sight");
             return true;
-        }
-
+        
         if (alert)
             m_Awareness.Sight.Alerted = m_SightTimer.Tick(Time.deltaTime, true);
 
         // This timer wont Tick unless the player is not in sight
+        // If the last time we saw the player then now we can get a path to the interest node of when we last saw the player
         if (m_PlayerPreviouslyInSight && !m_ReachedNodeOfInterest)
-        {
-            // If the last time we saw the player then now we can get a path to the interest node of when we last saw the player
             Annie.Movement.GetPathToInterest();
-        }
+        
 
         m_PlayerPreviouslyInSight = m_PlayerInSight; // false
         return false;
@@ -312,6 +350,17 @@ public class LASense : LAComponent
     public override void Start()
     {
         InitializeRayCastLayers();
+        GetInputSensorComponents(); // These should not be avaliable to other components directly but indirectly through this class/component e.g. see "Ears" get property
+    }
+
+    private void GetInputSensorComponents()
+    {
+        // This has a similiar heirarchical system to the object controller - think of refactoring this aswell!
+        m_HearingInput = GetComponentInChildren<LAHearingInput>();
+        if (m_HearingInput)
+        {
+            m_HearingInput.SetSenseController(this);
+        }
     }
 
     // Update is called once per frame

@@ -90,6 +90,26 @@ public class BuildingGeneration : MonoBehaviour
 
     public bool SameRowOrColumn(BlockPiece node1, BlockPiece node2)     { return (node1.GetX() == node2.GetX() || node1.GetZ() == node2.GetZ()); }
 
+    public BlockPiece GetNodeClosestToPoint(Vector3 point)
+    {
+        BlockPiece approx = null;
+        float closestDistance = 100f;
+        float distance = 0.0f;
+        foreach (FloorLevel floor in Floors)
+        {
+            foreach (BlockPiece node in floor.floorBlocks)
+            {
+                distance = Vector3.Distance(node.transform.position, point);
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    approx = node;
+                }
+            }
+        }
+
+        return approx;
+    }
 
 
     /// <summary>
@@ -103,9 +123,13 @@ public class BuildingGeneration : MonoBehaviour
         m_AbsoluteX = 10;
         m_AbsoulteY = difficultyRating;
         m_AbsoluteZ = 10;
+
         m_BoundaryX = m_AbsoluteX - 1;
-        m_BoundaryZ = m_AbsoulteY - 1;
+        m_BoundaryZ = m_AbsoulteY - 1; // WOOOOOOOOOO THIS BROKEEEE
         m_BoundaryY = m_AbsoluteZ - 1;
+
+
+
         float scaleX = m_AbsoluteX * cubicMeasureX;
         float scaleY = m_AbsoulteY * cubicMeasureY;
         float scaleZ = m_AbsoluteZ * cubicMeasureZ;
@@ -1368,9 +1392,12 @@ public class BuildingGeneration : MonoBehaviour
                     BlockPiece neighborNode = node.Neighbours[n].GetComponent<BlockPiece>();
                     if (!neighborNode.isCorridor && !neighborNode.isRoom && !neighborNode.isStairNode && neighborNode.isWalkable)
                     {
-                        FloodNodeOut(node.Neighbours[n]);                            // Flood fill out using reccursion
-                        Floors[y].AllRooms.Add(new Room(m_FloodContainer));           // Create a room with the captured nodes from reccursion
-                        SortFloodEntrances();                                       // Sort the random entrances to the rooms from the current route
+                        FloodNodeOut(node.Neighbours[n]);                           // Flood fill out using reccursion
+
+                        Room room = new Room(m_FloodContainer);
+                        // This relies on flood fill - refactor this whole project!
+                        SortFloodEntrances(room);                                   // Sort the random entrances to the rooms from the current route
+                        Floors[y].AllRooms.Add(room);                               // Create a room with the captured nodes from reccursion
                         ClearFloodFill();                                           // Clear the flood fill container ready for the next iteration
                     }
                 }
@@ -1381,11 +1408,14 @@ public class BuildingGeneration : MonoBehaviour
     /// <summary>
     /// Uses the local flood container to set properties on nodes for entering the captured area
     /// </summary>
-    private void SortFloodEntrances()
+    private void SortFloodEntrances(Room room)
     {
         // Sometimes the rooms dont have an entrance - occured with bottom floor entrance node and two stair nodes blocking a small room (only entrance node could be it be wasnt)
         int edgeCount = m_FloodConnections.Count;
+
+        // 30% of edges to the room will be entrances (minimum of 1 entrance)
         int roomConnections = Mathf.Max(1, Mathf.RoundToInt(0.3f * edgeCount));
+
         for (int r = 0; r < roomConnections; r++)
         {
             int randomIndex = UnityEngine.Random.Range(0, m_FloodConnections.Count);
@@ -1407,7 +1437,8 @@ public class BuildingGeneration : MonoBehaviour
                         
                         if (!neightborNode.MiniumumConnections.Contains(node.gameObject))
                             neightborNode.MiniumumConnections.Add(node.gameObject);
-                        
+
+                        room.Connections.Add(new RoomConnection(node, neightborNode));
                         break;
                     }
                 }

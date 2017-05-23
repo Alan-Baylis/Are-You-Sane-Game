@@ -127,14 +127,24 @@ public class PlayerController : PlayerComponent
         public float CurrentTargetSpeed = 8f;
         private float m_MovementWeight = 0.0f;
         private float m_MedianInputWeight = 0.0f;
+        private bool m_Still = false;
         public Vector3 CrouchOffset;
 
         private bool m_Running;
         public float MovementWeight { get { return m_MovementWeight; } }
         public bool Running { get { return m_Running; } }
+        public bool Still { get { return m_Still; } }
         public void UpdateDesiredTargetSpeed(Vector2 input, bool crouching)
         {
-            if (input == Vector2.zero) return;
+            if (input == Vector2.zero)
+            {
+                m_MedianInputWeight = 0f;
+                m_MovementWeight = 0.0f;
+                m_Still = true;
+                return;
+            }
+
+            m_Still = false;
             if (input.x > 0 || input.x < 0)
                 CurrentTargetSpeed = StrafeSpeed;
 
@@ -169,7 +179,7 @@ public class PlayerController : PlayerComponent
                 m_MedianInputWeight = input.sqrMagnitude;
             }
 
-            m_MovementWeight = m_MedianInputWeight * CurrentTargetSpeed * Time.deltaTime;
+            m_MovementWeight = Mathf.Lerp(m_MovementWeight, (m_MedianInputWeight * CurrentTargetSpeed * Time.deltaTime), 2f * Time.deltaTime);
         }
 
 
@@ -185,6 +195,20 @@ public class PlayerController : PlayerComponent
         }
     }
 
+    private void SetFootstepVolume()
+    {
+        if (movementSettings.Still)
+        {
+            if (m_AudioSource.volume > 0.05f)
+            {
+                m_AudioSource.volume = Mathf.Lerp(m_AudioSource.volume, 0f, 2f * Time.deltaTime);
+            }
+        }
+        else
+        {
+            m_AudioSource.volume = m_AudioCurveModifier.Evaluate(movementSettings.GetMovementWeightPercentage());
+        }
+    }
 
     private void PlayFootStepAudio()
     {
@@ -192,7 +216,8 @@ public class PlayerController : PlayerComponent
         // excluding sound at index 0
         int n = Random.Range(1, m_FootstepSounds.Length);
         //Debug.Log(movementSettings.CurrentSpeedPercent());
-        m_AudioSource.volume = m_AudioCurveModifier.Evaluate(movementSettings.GetMovementWeightPercentage());
+        
+        // Check potentially need to set volume here after setting the clip (it might reset the volume after setting the clip?)
         m_AudioSource.clip = m_FootstepSounds[n];
         m_AudioSource.PlayOneShot(m_AudioSource.clip);
         // move picked sound to index 0 so it's not picked next time
@@ -215,6 +240,7 @@ public class PlayerController : PlayerComponent
     {
         if (!m_Player.IsActivated) return;
 
+        SetFootstepVolume();
         RotateView();
         if (CrossPlatformInputManager.GetButtonDown("Jump") && !m_Jump)
         {
@@ -222,6 +248,8 @@ public class PlayerController : PlayerComponent
             m_Jump = true;
         }
 
+
+        
         // TODO - Find appropriate mechanic for reducing the hit box when crouching
         // We might need to apply collision layers for sight which only get the trigger box around the player -
         // Then the trigger box can change in size? but then how do we actually affect the collision box boundaries?

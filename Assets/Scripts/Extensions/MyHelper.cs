@@ -6,6 +6,15 @@ using System.Linq;
 
 public static class MyHelper
 {
+    public static T GetComponentInParentOrChildren<T>(this GameObject anyObject) where T : Component
+    {
+        Transform currentTransform = anyObject.transform;
+        while (currentTransform.parent != null)
+            currentTransform = currentTransform.parent;
+        
+        return currentTransform.GetComponentInChildren<T>();
+    }
+
     public static T FindComponentInChildrenWithTag<T>(this GameObject parent, string tag) where T : Component
     {
         Transform child = FindChildWithTag(parent, tag);
@@ -92,7 +101,7 @@ public static class MyHelper
         if (modulus < sequence.Count)
             Debug.LogError(sequence.ToString() + "Sequence can not contain more elements than specified modulus.");
 
-        foreach (var validSequence in getAllModulusSequences(modulus, sequence.Count))
+        foreach (var validSequence in GetAllModulusSequences(modulus, sequence.Count))
         {
             if (validSequence.All(item => sequence.Contains(item)))
                 return validSequence.ToList();
@@ -114,7 +123,7 @@ public static class MyHelper
         yield return sequence.First();
     }
 
-    private static IEnumerable<IEnumerable<int>> getAllModulusSequences(int modulus, int length)
+    private static IEnumerable<IEnumerable<int>> GetAllModulusSequences(int modulus, int length)
     {
         var sequence = Enumerable.Range(0, modulus);
 

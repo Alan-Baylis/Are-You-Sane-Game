@@ -95,6 +95,7 @@ public class LAObject : MonoBehaviour // This Class has to be responsible for ma
         }
 
         m_physics.SetHeuristicTemp();
+
         BehaviourTreeBuilder builder = new BehaviourTreeBuilder();
         this.m_tree = builder
 
@@ -105,12 +106,12 @@ public class LAObject : MonoBehaviour // This Class has to be responsible for ma
                 .Selector("Senses")
                 #region PLAYER INTERACTIONS
 
-
                     // SIGHT
-                    .Sequence("Sight Checks")
+                    .Sequence("Sight Checks For Player")
                     #region SIGHT
 
-                        .Condition("Player In Sight", t => m_sense.PlayerInFOV()) // If the player within our field of view - this will automatically change based on the awareness of the AI (handled internally)
+                        // If the player within our field of view - this will automatically change based on the awareness of the AI (handled internally)
+                        .Condition("Player In Sight", t => m_sense.PlayerInFOV()) 
                         
                         .Selector("Attack OR MoveToPlayer")
                         #region ATTACK or MOVE TO PLAYER
@@ -139,48 +140,20 @@ public class LAObject : MonoBehaviour // This Class has to be responsible for ma
                     .End()
 
 
-                    // HEARING
-                    //.Sequence("Startled Checks")
-                    //#region STARTLED
+                    .Sequence("Listen For Sounds")
 
-                    //    .Selector("Point Of Interest Naviagtion")
-                    
-                    //        .Sequence("Look to Point of Interest")
+                        .Condition("Can Hear Sound?", t => m_sense.Ears.CanHearSound())
+                        .DoAction("Evaluate Sound and Set Interest", t =>
+                        {
+                            // This will return a failure always as we would also like to move towards a sound
+                            return m_sense.EvaluateSoundToInterest(); 
+                        })
 
-                    //            .Condition("Startled by Input?", t => m_sense.Startled)
-                    //            .DoAction("Turn To Point Of Interest", t =>
-                    //            {
-                    //                return m_movement.TurnToPointOfInterest();
-                    //            })
+                    .End()
 
-                    //        .End()
-
-                            
-
-
-
-                        
-                    //    .End()
-
-                    //#endregion
-                    //.End()
-
-
-
-                    // TOUCH
-                    
-
-
-
-                    // SMELL
-
-
-                    // TASTE
-
-
-
+                // TOUCH, SMELL, TASTE (OTHER SENSES)
                 #endregion
-                .End()
+                .End() // End of Senses
 
 
                 .Selector("Navigation")

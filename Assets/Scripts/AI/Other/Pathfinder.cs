@@ -433,6 +433,9 @@ public class Pathfinder : MonoBehaviour
                                 if (lookingAt.isCorridorConnection && (neighbor.isRoom && !neighbor.isRoomConnection))
                                     continue;
 
+                                // Check the room specific connection with the current looking at node
+                                if (neighbor.isRoom && neighbor.Room.Connections.Find(c => c.outside == lookingAt) == null)
+                                    continue;
                             }
                             else
                             {
@@ -441,6 +444,25 @@ public class Pathfinder : MonoBehaviour
                                 {
                                     continue;
                                 }
+
+                                if (neighbor.isCorridor)
+                                {
+                                    // If its a corridor, make sure the current node is a connection to it
+                                    if (lastEnteredRoom.Connections.Find(c => c.outside == neighbor && c.inside == lookingAt) == null)
+                                    {
+                                        continue;
+                                    }
+                                }
+                                else
+                                {
+                                    // cannot enter another room without going into corridor first
+                                    if (neighbor.Room != lastEnteredRoom)
+                                    {
+                                        continue;
+                                    }
+                                }
+
+                                
                             }
                         }
                         else
@@ -499,6 +521,14 @@ public class Pathfinder : MonoBehaviour
                         {
                             roomEntered = false;
                             lastEnteredRoom = null;
+                            //if (lastEnteredRoom.Connections.Find(c => c.outside == lookingAt) != null)
+                            //{
+                                
+                            //}
+                            //else
+                            //{
+                            //    Debug.Log("Trying to leave room through an exit not in the room");
+                            //}
                         }
                     }
                 }

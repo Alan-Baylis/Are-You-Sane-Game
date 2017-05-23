@@ -11,7 +11,6 @@ public class CellDoorInteractor : MonoBehaviour
     {
         if (other.transform.tag == "Player")
         {
-            Debug.Log("Player in Door");
             if (m_player == null)
                 m_player = other.transform.GetComponent<PlayerObject>();
 

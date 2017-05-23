@@ -97,9 +97,10 @@ public class GameInfoTimer
     private float m_MaxTime;
     private float m_CurrentTime;
 
-    public float CurrentTime { get { return m_CurrentTime; } }
+    public float CurrentTime    { get { return m_CurrentTime; } }
+    public float MaxTime        { set { m_MaxTime = value; } }
+    public void ResetTime()     { m_CurrentTime = m_MaxTime; }
 
-    public void ResetTime() { m_CurrentTime = m_MaxTime; }
     public bool Tick(float deltaTime, bool activate)
     {
         if (m_CurrentTime > 0)

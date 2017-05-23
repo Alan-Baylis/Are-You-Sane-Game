@@ -15,6 +15,18 @@ public enum RoomType
 }
 
 
+public class RoomConnection
+{
+    public BlockPiece inside;
+    public BlockPiece outside;
+
+    public RoomConnection(BlockPiece inside, BlockPiece outside)
+    {
+        this.inside = inside;
+        this.outside = outside;
+    }
+}
+
 public class Room
 {
     private bool m_hasCorridorConnection = false;
@@ -23,6 +35,8 @@ public class Room
     private string m_roomName;
 
     public BlockPiece[] Nodes { get { return nodes; } }
+
+    public List<RoomConnection> Connections = new List<RoomConnection>(); 
 
     public string roomName
     {

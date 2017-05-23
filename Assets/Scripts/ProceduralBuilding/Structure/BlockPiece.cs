@@ -410,7 +410,8 @@ public class BlockPiece : MonoBehaviour
 
     private BlockType TjuncDiagonalType(int diagonalIndex, Accepted3TypesOrdered types)
     {
-        return (m_Building.SameRowOrColumn(DiagonalNeighbours[diagonalIndex].GetComponent<BlockPiece>(), Neighbours[PillarNeighboutIndicies[0]].GetComponent<BlockPiece>())) ? BlockType.TjuncX2 : TjuncSwitchType(types);
+        return (m_Building.SameRowOrColumn(DiagonalNeighbours[diagonalIndex].GetComponent<BlockPiece>(),
+            Neighbours[PillarNeighboutIndicies[0]].GetComponent<BlockPiece>())) ? BlockType.TjuncX2 : TjuncSwitchType(types);
     }
 
     private float PillarX2Accept4Rotation

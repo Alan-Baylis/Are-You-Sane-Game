@@ -16,7 +16,7 @@ public class PAIG : MonoBehaviour
     private float soundTimer = 10f;
     private const string m_stairTag = "Stairs";
     private const string m_wallTag = "Wall";
-    private PlayerHeuristics m_player;
+    private PlayerHeuristics m_player; // Change to player Object
     private BuildingGeneration buildingGen;
     private ZombieManager zombieGen;
     private AIResources resources;
@@ -37,7 +37,7 @@ public class PAIG : MonoBehaviour
     void Start ()
     {
         resources = GetComponent<AIResources>();
-        m_player = GameObject.FindGameObjectWithTag(GameTag.Player).GetComponent<PlayerHeuristics>();
+        m_player = GameObject.FindGameObjectWithTag(GameTag.Player).GetComponent<PlayerHeuristics>(); // Change this to playerObject
         buildingGen = GameObject.Find("BuildingNode").GetComponent<BuildingGeneration>();
         zombieGen = buildingGen.GetComponent<ZombieManager>();
         m_Pathfinder = GetComponent<Pathfinder>();
@@ -153,8 +153,9 @@ public class PAIG : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.M) && !annieSpawned)
             {
-                BlockPiece node = buildingGen.Floors[1].routeBlocks[3];
-                AnnieObject.Activate(m_player.gameObject, node, buildingGen);
+                List<BlockPiece> nonStairBlocks = buildingGen.Floors[1].floorBlocks.FindAll(n => !n.isStairNode);
+                int randomIndex = UnityEngine.Random.Range(0, nonStairBlocks.Count);
+                AnnieObject.Activate(m_player.gameObject, nonStairBlocks[randomIndex], buildingGen);
                 annieSpawned = true;
             }
 

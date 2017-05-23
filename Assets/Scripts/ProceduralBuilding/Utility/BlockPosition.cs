@@ -10,7 +10,7 @@ public class BlockPosition : MonoBehaviour
         if (other.gameObject.tag == "Player")
         {
             other.gameObject.GetComponent<PlayerHeuristics>().BlockPosition = m_Node;
-            Debug.Log("Player Poisition: " + m_Node + " ------------------------------------------");
+            //Debug.Log("Player Poisition: " + m_Node + " ------------------------------------------");
             PAIG.AIDirector.MovementTriggerCallBack();
         }
         else if (other.gameObject.tag == "Zombie")
