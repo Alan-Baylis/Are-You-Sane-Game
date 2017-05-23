@@ -9,9 +9,7 @@ Key features:
 - Custom Grid Traversal algorithms
 - 3D Mathematics for Vectors
 - Quaternion Solutions
-- Extremely effective OO design GameObjects
 - Custom Behaviour Tree Implementation on an AI
-- Complex problem solving with a 3D Grid
 - Personal Dynamic Occlusion Culling
 
 Main implementation:
